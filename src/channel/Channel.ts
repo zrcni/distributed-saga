@@ -1,6 +1,11 @@
 import { uuid } from "@/utils"
 import { Queue } from "./Queue"
 
+interface IChannelItem<T = unknown> {
+  id: string
+  data: T
+}
+
 export class ChannelItem<T = unknown> {
   id: string
   data: T
@@ -8,6 +13,13 @@ export class ChannelItem<T = unknown> {
   constructor(id: string, data: T) {
     this.id = id
     this.data = data
+  }
+
+  toJSON(): IChannelItem<T> {
+    return {
+      id: this.id,
+      data: this.data,
+    }
   }
 }
 
@@ -29,18 +41,18 @@ export interface ChannelSubscriber {
  * Each subscriber gets the message
  */
 export class Channel implements ChannelPublisher, ChannelSubscriber {
-  private queue: Queue<ChannelItem>
+  private queue: Queue<IChannelItem<any>>
   private executing: boolean
-  private callbacks: Set<SubscribeCallback>
+  private callbacks: Set<SubscribeCallback<any>>
 
-  constructor(queue: Queue<ChannelItem>) {
+  constructor(queue: Queue<IChannelItem<any>>) {
     this.queue = queue
     this.executing = false
     this.callbacks = new Set()
   }
 
   publish<T = unknown>(data: T) {
-    this.queue.put(new ChannelItem(uuid(), data))
+    this.queue.put(new ChannelItem(uuid(), data).toJSON())
     setImmediate(() => this.tryProcessQueue())
   }
 
@@ -71,7 +83,7 @@ export class Channel implements ChannelPublisher, ChannelSubscriber {
     return setImmediate(() => this.tryProcessQueue())
   }
 
-  private async processItem(item: ChannelItem, callback: SubscribeCallback) {
+  private async processItem(item: IChannelItem, callback: SubscribeCallback) {
     try {
       await callback(item.data)
       // eslint-disable-next-line no-empty

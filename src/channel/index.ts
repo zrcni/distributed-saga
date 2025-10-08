@@ -1,4 +1,4 @@
-import { Channel } from "./Channel"
-import { Queue } from "./Queue"
+export { Channel } from "./Channel"
+export { Queue } from "./Queue"
 
-export const sagaInChannel = new Channel(new Queue())
+// export const sagaInChannel = new Channel(new Queue())
