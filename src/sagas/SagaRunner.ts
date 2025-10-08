@@ -1,25 +1,19 @@
+import { EventEmitter } from "events"
 import { logger } from "@/logger"
 import { SagaDefinition } from "@/sagas/saga-definition/SagaDefinition"
 import { Saga } from "./Saga"
 import { SagaStep } from "./saga-definition/SagaStep"
 
-type ErrorHandler = (err: Error) => void
-
 export class SagaRunner<StartPayload = unknown> {
   saga: Saga<StartPayload>
   sagaDefinition: SagaDefinition
   currentStepIndex: number
-  handleError: ErrorHandler
+  emitter: EventEmitter
 
   constructor(saga: Saga<StartPayload>, sagaDefinition: SagaDefinition) {
     this.saga = saga
     this.sagaDefinition = sagaDefinition
-    this.handleError = () => {}
-  }
-
-  onError(handleError: (err: Error) => void) {
-    this.handleError = handleError
-    return this
+    this.emitter = new EventEmitter()
   }
 
   private getCurrentStep(): SagaStep | null {
@@ -46,13 +40,23 @@ export class SagaRunner<StartPayload = unknown> {
 
     const data = await this.saga.getJob()
     try {
+      this.emitter.emit("sagaStarted", {
+        sagaId: this.saga.sagaId,
+        data,
+      })
       return await this.iterate(data)
     } catch (err) {
-      logger.info(
-        `Failed to run task ${this.getCurrentStep().taskName}. Aborting saga...`
-      )
-      // TODO add error as data to saga, but where?
-      this.handleError(err)
+      const step = this.getCurrentStep()
+      logger.info(`Failed to run task ${step.taskName}. Aborting saga...`)
+      this.emitter.emit("taskFailed", {
+        sagaId: this.saga.sagaId,
+        data,
+        taskName: step.taskName,
+      })
+      this.emitter.emit("sagaFailed", {
+        sagaId: this.saga.sagaId,
+        data,
+      })
       await this.saga.abortSaga()
       await this.compensate()
       return this.saga
@@ -93,6 +97,10 @@ export class SagaRunner<StartPayload = unknown> {
         throw endSagaResult.data
       }
       logger.info(`Saga ended`)
+      this.emitter.emit("sagaSucceeded", {
+        sagaId: this.saga.sagaId,
+        data,
+      })
       return this.saga
     }
 
@@ -111,6 +119,11 @@ export class SagaRunner<StartPayload = unknown> {
     }
 
     logger.info(`Running task ${step.taskName}`)
+    this.emitter.emit("taskStarted", {
+      sagaId: this.saga.sagaId,
+      data,
+      taskName: step.taskName,
+    })
     const result = await step.invokeCallback(data, prevStepResult)
     const endTaskResult = await this.saga.endTask(step.taskName, result)
 
@@ -119,6 +132,11 @@ export class SagaRunner<StartPayload = unknown> {
     }
 
     logger.info(`Ended task ${step.taskName}`)
+    this.emitter.emit("taskSucceeded", {
+      sagaId: this.saga.sagaId,
+      data,
+      taskName: step.taskName,
+    })
     this.incrementStep()
     return this.iterate(data)
   }
@@ -144,10 +162,29 @@ export class SagaRunner<StartPayload = unknown> {
         }
 
         logger.info(`Compensating task ${step.taskName}`)
+        this.emitter.emit("compensationStarted", {
+          sagaId: this.saga.sagaId,
+          data,
+          taskName: step.taskName,
+        })
 
-        const result = await step.compensateCallback(data, taskData)
-        logger.info(`Compensated task ${step.taskName}`)
-        await this.saga.endCompensatingTask(step.taskName, result)
+        try {
+          const result = await step.compensateCallback(data, taskData)
+          logger.info(`Compensated task ${step.taskName}`)
+          this.emitter.emit("compensationSucceeded", {
+            sagaId: this.saga.sagaId,
+            data,
+            taskName: step.taskName,
+          })
+          await this.saga.endCompensatingTask(step.taskName, result)
+        } catch (err) {
+          this.emitter.emit("compensationFailed", {
+            sagaId: this.saga.sagaId,
+            data,
+            taskName: step.taskName,
+          })
+          // continue compensating other tasks even if one fails
+        }
       }
     }
 
