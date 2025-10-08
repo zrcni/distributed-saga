@@ -38,23 +38,30 @@ import { sagaInChannel } from 'distributed-sagas/channel';
 
 ### Build
 
-The library is built with dual CommonJS and ESM support:
+The library is built with dual CommonJS and ESM support, with TypeScript declarations alongside each module:
 
 ```bash
 npm run build
 ```
 
-This will create three output directories:
-- `dist/cjs/` - CommonJS modules
-- `dist/esm/` - ES modules
-- `dist/types/` - TypeScript declaration files
+This will create two output directories:
+- `dist/cjs/` - CommonJS modules with `.d.ts` files
+- `dist/esm/` - ES modules with `.d.ts` files
+
+Each directory contains the compiled JavaScript files (`.js`), source maps (`.js.map`), TypeScript declarations (`.d.ts`), and declaration maps (`.d.ts.map`) co-located together. This ensures proper type resolution for both CommonJS and ESM consumers.
 
 ### Build Scripts
 
-- `npm run build` - Build all formats (CJS + ESM + Types)
-- `npm run build:cjs` - Build CommonJS only
-- `npm run build:esm` - Build ESM only
-- `npm run build:types` - Generate TypeScript declarations only
+- `npm run build` - Build all formats (CJS + ESM, each with types)
+- `npm run build:cjs` - Build CommonJS with type declarations
+- `npm run build:esm` - Build ESM with type declarations
+
+### Build Configuration
+
+The build uses:
+- **SWC** (`.swcrc`, `.swcrc.esm`) - Fast JavaScript compilation
+- **TypeScript** (`tsconfig.cjs.json`, `tsconfig.esm.json`) - Type declaration generation
+- Type declarations are co-located with JavaScript files for proper module resolution
 
 ### Testing
 
