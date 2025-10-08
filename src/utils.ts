@@ -1,4 +1,4 @@
-import { TimeoutError } from "./errors"
+import { TimeoutError } from "@/errors"
 import * as _uuid from "uuid"
 
 export const uuid = _uuid.v4

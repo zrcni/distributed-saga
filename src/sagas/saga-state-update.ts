@@ -3,7 +3,7 @@ import {
   InvalidSagaMessageError,
   InvalidSagaStateError,
   InvalidSagaStateUpdateError,
-} from "../errors"
+} from "@/errors"
 import { SagaMessage, SagaMessageType } from "./SagaMessage"
 import { SagaState, TaskStatus } from "./SagaState"
 
