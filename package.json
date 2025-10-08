@@ -1,6 +1,6 @@
 {
   "name": "distributed-saga",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha.1",
   "author": "zrcni",
   "repository": "https://github.com/zrcni/distributed-saga",
   "license": "ISC",
