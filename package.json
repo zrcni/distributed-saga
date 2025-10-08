@@ -3,27 +3,15 @@
   "version": "0.0.1",
   "author": "",
   "license": "ISC",
-  "main": "./dist/cjs/sagas/index.js",
-  "module": "./dist/esm/sagas/index.js",
-  "types": "./dist/cjs/sagas/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/cjs/sagas/index.d.ts",
-      "require": "./dist/cjs/sagas/index.js",
-      "import": "./dist/esm/sagas/index.js",
-      "default": "./dist/cjs/sagas/index.js"
-    },
-    "./saga-definition": {
-      "types": "./dist/cjs/sagas/saga-definition/index.d.ts",
-      "require": "./dist/cjs/sagas/saga-definition/index.js",
-      "import": "./dist/esm/sagas/saga-definition/index.js",
-      "default": "./dist/cjs/sagas/saga-definition/index.js"
-    },
-    "./channel": {
-      "types": "./dist/cjs/channel/index.d.ts",
-      "require": "./dist/cjs/channel/index.js",
-      "import": "./dist/esm/channel/index.js",
-      "default": "./dist/cjs/channel/index.js"
+      "types": "./dist/cjs/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/cjs/index.js"
     }
   },
   "files": [
