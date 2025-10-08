@@ -20,8 +20,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "npm run build && cross-env NODE_ENV=production node dist/cjs/index.js",
-    "dev": "cross-env NODE_ENV=development nodemon",
+    "clean": "rm -rf ./dist",
     "build": "npm run build:cjs && npm run build:esm",
     "build:cjs": "swc src -d dist/cjs --config-file .swcrc --copy-files && tsc --project tsconfig.cjs.json",
     "build:esm": "swc src -d dist/esm --config-file .swcrc.esm --copy-files && tsc --project tsconfig.esm.json",
