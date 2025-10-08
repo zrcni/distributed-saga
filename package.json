@@ -4,7 +4,7 @@
   "author": "zrcni",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zrcni/distributed-saga.git"
+    "url": "git+https://github.com/zrcni/distributed-saga.git"
   },
   "license": "MIT",
   "main": "./dist/cjs/index.js",
