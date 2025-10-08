@@ -20,7 +20,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "clean": "rm -rf ./dist",
+    "prepublishOnly": "npm run clean:dist && npm run build && npm run clean:src",
+    "clean:dist": "rm -rf ./dist",
+    "clean:src": "rm -rf ./src && rm -rf ./tsconfig*.json && rm -rf jest.config.js && rm -rf .swcrc*",
     "build": "npm run build:cjs && npm run build:esm",
     "build:cjs": "swc src -d dist/cjs --config-file .swcrc --copy-files && tsc --project tsconfig.cjs.json",
     "build:esm": "swc src -d dist/esm --config-file .swcrc.esm --copy-files && tsc --project tsconfig.esm.json",
