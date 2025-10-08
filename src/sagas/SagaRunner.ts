@@ -1,5 +1,4 @@
 import { EventEmitter } from "events"
-import { logger } from "@/logger"
 import { SagaDefinition } from "@/sagas/saga-definition/SagaDefinition"
 import { Saga } from "./Saga"
 import { SagaStep } from "./saga-definition/SagaStep"
@@ -47,7 +46,6 @@ export class SagaRunner<StartPayload = unknown> {
       return await this.iterate(data)
     } catch (err) {
       const step = this.getCurrentStep()
-      logger.info(`Failed to run task ${step.taskName}. Aborting saga...`)
       this.emitter.emit("taskFailed", {
         sagaId: this.saga.sagaId,
         data,
@@ -91,12 +89,10 @@ export class SagaRunner<StartPayload = unknown> {
     }
 
     if (step.isEnd) {
-      logger.info(`Ending saga`)
       const endSagaResult = await this.saga.endSaga()
       if (endSagaResult.isError()) {
         throw endSagaResult.data
       }
-      logger.info(`Saga ended`)
       this.emitter.emit("sagaSucceeded", {
         sagaId: this.saga.sagaId,
         data,
@@ -118,7 +114,6 @@ export class SagaRunner<StartPayload = unknown> {
       throw startTaskResult.data
     }
 
-    logger.info(`Running task ${step.taskName}`)
     this.emitter.emit("taskStarted", {
       sagaId: this.saga.sagaId,
       data,
@@ -131,7 +126,6 @@ export class SagaRunner<StartPayload = unknown> {
       throw endTaskResult.data
     }
 
-    logger.info(`Ended task ${step.taskName}`)
     this.emitter.emit("taskSucceeded", {
       sagaId: this.saga.sagaId,
       data,
@@ -161,7 +155,6 @@ export class SagaRunner<StartPayload = unknown> {
           throw startCompResult.data
         }
 
-        logger.info(`Compensating task ${step.taskName}`)
         this.emitter.emit("compensationStarted", {
           sagaId: this.saga.sagaId,
           data,
@@ -170,7 +163,6 @@ export class SagaRunner<StartPayload = unknown> {
 
         try {
           const result = await step.compensateCallback(data, taskData)
-          logger.info(`Compensated task ${step.taskName}`)
           this.emitter.emit("compensationSucceeded", {
             sagaId: this.saga.sagaId,
             data,

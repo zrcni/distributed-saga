@@ -1,5 +1,4 @@
 import { SagaAlreadyRunningError, SagaNotRunningError } from "@/errors"
-import { logger } from "@/logger"
 import { Result, ResultError, ResultOk } from "@/Result"
 import { SagaLog } from "./types"
 import { SagaCoordinator } from "./SagaCoordinator"
@@ -37,8 +36,6 @@ export class InMemorySagaLog implements SagaLog {
     sagaId: string,
     job: D
   ): Promise<ResultOk | ResultError<SagaAlreadyRunningError>> {
-    logger.info(`Start saga ${sagaId}`)
-
     const messages = this.sagas[sagaId]
     if (messages) {
       return Result.error(
@@ -56,10 +53,6 @@ export class InMemorySagaLog implements SagaLog {
   async logMessage(
     msg: SagaMessage
   ): Promise<ResultOk | ResultError<SagaNotRunningError>> {
-    logger.info(
-      `Saga ${msg.sagaId}: ${msg.msgType}${msg.taskId ? ` ${msg.taskId}` : ""}`
-    )
-
     const messages = this.sagas[msg.sagaId]
 
     if (!messages) {

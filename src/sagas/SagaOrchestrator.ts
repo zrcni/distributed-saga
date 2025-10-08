@@ -1,5 +1,4 @@
 import { EventEmitter } from "events"
-import { logger } from "@/logger"
 import { SagaDefinition } from "@/sagas/saga-definition/SagaDefinition"
 import { Saga } from "./Saga"
 import { SagaStep } from "./saga-definition/SagaStep"
@@ -59,7 +58,6 @@ export class SagaOrchestrator extends EventEmitter {
       )
     } catch (err) {
       const step = sagaDefinition.steps[currentStepIndex]
-      logger.info(`Failed to run task ${step.taskName}. Aborting saga...`)
       this.emit("taskFailed", {
         sagaId: saga.sagaId,
         data,
@@ -93,12 +91,10 @@ export class SagaOrchestrator extends EventEmitter {
       }
 
       if (step.isEnd) {
-        logger.info(`Ending saga`)
         const endSagaResult = await saga.endSaga()
         if (endSagaResult.isError()) {
           throw endSagaResult.data
         }
-        logger.info(`Saga ended`)
         this.emit("sagaSucceeded", {
           sagaId: saga.sagaId,
           data,
@@ -119,7 +115,6 @@ export class SagaOrchestrator extends EventEmitter {
         throw startTaskResult.data
       }
 
-      logger.info(`Running task ${step.taskName}`)
       this.emit("taskStarted", {
         sagaId: saga.sagaId,
         data,
@@ -132,7 +127,6 @@ export class SagaOrchestrator extends EventEmitter {
         throw endTaskResult.data
       }
 
-      logger.info(`Ended task ${step.taskName}`)
       this.emit("taskSucceeded", {
         sagaId: saga.sagaId,
         data,
@@ -169,7 +163,6 @@ export class SagaOrchestrator extends EventEmitter {
           throw startCompResult.data
         }
 
-        logger.info(`Compensating task ${step.taskName}`)
         this.emit("compensationStarted", {
           sagaId: saga.sagaId,
           data,
@@ -178,7 +171,6 @@ export class SagaOrchestrator extends EventEmitter {
 
         try {
           const result = await step.compensateCallback(data, taskData)
-          logger.info(`Compensated task ${step.taskName}`)
           this.emit("compensationSucceeded", {
             sagaId: saga.sagaId,
             data,
