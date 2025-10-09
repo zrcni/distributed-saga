@@ -1,4 +1,4 @@
-import { start } from "../saga-definition"
+import { SagaBuilder } from "../saga-definition"
 import { SagaRunner } from "../SagaRunner"
 import { InMemorySagaLog } from "../InMemorySagaLog"
 
@@ -10,7 +10,7 @@ describe("SagaRunner", () => {
   const step3Invoke = jest.fn()
   const step3Compensate = jest.fn()
 
-  const testSagaDefinition = start()
+  const testSagaDefinition = SagaBuilder.start()
     .invoke(step1Invoke)
     .compensate(step1Compensate)
     .withName("step1")

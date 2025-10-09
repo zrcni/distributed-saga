@@ -1,4 +1,5 @@
 export * from "./InMemorySagaLog"
+export * from "./saga-definition"
 export * from "./Saga"
 export * from "./SagaCoordinator"
 export * from "./SagaImplementation"

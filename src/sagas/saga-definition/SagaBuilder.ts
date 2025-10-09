@@ -27,4 +27,8 @@ export class SagaBuilder {
     this.steps[this.currentStepIndex] = new EndStep(this)
     return SagaDefinition.create(this)
   }
+
+  static start() {
+    return new SagaBuilder().currentStep
+  }
 }

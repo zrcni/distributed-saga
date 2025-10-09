@@ -1,7 +1,4 @@
-import { SagaBuilder } from "./SagaBuilder"
-
+export * from "./SagaDefinition"
+export * from "./SagaBuilder"
+export * from "./SagaStep"
 export * from "./types"
-
-export function start() {
-  return new SagaBuilder().currentStep
-}
