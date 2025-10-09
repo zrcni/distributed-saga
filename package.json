@@ -1,10 +1,15 @@
 {
-  "name": "distributed-saga",
+  "name": "@zrcni/distributed-saga",
   "version": "0.0.1-alpha.2",
   "author": "zrcni",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zrcni/distributed-saga.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "tag": "alpha",
+    "access": "public"
   },
   "license": "MIT",
   "main": "./dist/cjs/index.js",
@@ -64,5 +69,8 @@
     "tsconfig-paths": "^4.0.0",
     "typescript": "^4.7.4",
     "wait-for-expect": "^3.0.2"
+  },
+  "peerDependencies": {
+    "mongodb": "^6.20.0"
   }
 }
