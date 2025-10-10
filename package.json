@@ -37,6 +37,8 @@
     "build:types": "tsc --project tsconfig.build.json",
     "build:tsc": "tsc && tsc-alias",
     "test": "jest --forceExit --detectOpenHandles",
+    "test:no-mongo": "jest --config jest.config.no-mongo.js --forceExit --detectOpenHandles",
+    "test:mongo": "jest MongoDBSagaLog.test.ts --forceExit --detectOpenHandles",
     "lint:fix": "npm run lint -- --fix"
   },
   "dependencies": {
@@ -61,6 +63,7 @@
     "husky": "^8.0.1",
     "jest": "^28.1.1",
     "lint-staged": "^13.0.3",
+    "mongodb-memory-server": "^10.2.3",
     "nodemon": "^2.0.19",
     "prettier": "^2.7.1",
     "ts-jest": "^28.0.7",

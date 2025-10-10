@@ -9,6 +9,8 @@ module.exports = {
     "^.+\\.tsx?$": "ts-jest",
   },
   setupFilesAfterEnv: ["./setup-tests.ts"],
+  globalSetup: "./jest.global-setup.js",
+  globalTeardown: "./jest.global-teardown.js",
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
     prefix: "<rootDir>/src",
   }),
