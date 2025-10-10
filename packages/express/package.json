@@ -1,0 +1,32 @@
+{
+  "name": "@saga-board/express",
+  "version": "0.0.1",
+  "description": "Saga Board Express Adapter - Express.js adapter for Saga Dashboard",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "saga",
+    "distributed-saga",
+    "monitoring",
+    "dashboard",
+    "express"
+  ],
+  "dependencies": {
+    "@saga-board/api": "file:../api",
+    "@saga-board/ui": "file:../ui"
+  },
+  "peerDependencies": {
+    "express": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

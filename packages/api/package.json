@@ -1,0 +1,26 @@
+{
+  "name": "@saga-board/api",
+  "version": "0.0.1",
+  "description": "Saga Board API - Core API for monitoring distributed sagas",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "saga",
+    "distributed-saga",
+    "monitoring",
+    "dashboard"
+  ],
+  "peerDependencies": {
+    "@zrcni/distributed-saga": "^0.0.1-alpha.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "saga-board-express-example",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Example of using Saga Board with Express",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "dev": "ts-node-dev index.ts"
+  },
+  "dependencies": {
+    "@saga-board/api": "file:../../packages/api",
+    "@saga-board/express": "file:../../packages/express",
+    "@zrcni/distributed-saga": "file:../..",
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
+  }
+}

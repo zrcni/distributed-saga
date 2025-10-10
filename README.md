@@ -69,6 +69,41 @@ The build uses:
 npm test
 ```
 
+## 📊 Saga Dashboard
+
+This library now includes **Saga Board** - a lightweight, pluggable dashboard for monitoring and managing your distributed sagas in real-time!
+
+### Quick Start
+
+```typescript
+import express from 'express';
+import { createSagaBoard, SagaAdapter } from '@saga-board/api';
+import { ExpressAdapter } from '@saga-board/express';
+
+const app = express();
+const coordinator = InMemorySagaLog.createInMemorySagaCoordinator();
+
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath('/admin/sagas');
+
+createSagaBoard({
+  adapters: [new SagaAdapter(coordinator, { name: 'Orders' })],
+  serverAdapter,
+});
+
+app.use('/admin/sagas', serverAdapter.getRouter());
+```
+
+### Features
+
+- 📊 Real-time saga monitoring
+- 🎯 Task status visualization
+- 🔄 Saga actions (abort, retry)
+- 🔌 Framework agnostic (Express adapter included)
+- 🔒 Built-in access control
+
+See the [Saga Board README](./packages/SAGA_BOARD_README.md) for complete documentation and the [example](./examples/with-express-dashboard) for a working demo.
+
 ## License
 
 ISC
