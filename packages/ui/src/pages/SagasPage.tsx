@@ -69,32 +69,66 @@ export const SagasPage: React.FC = () => {
           {sagas.map((saga) => (
             <div key={saga.sagaId} className="saga-card">
               <div className="saga-header">
-                <div className="saga-id">{saga.sagaId}</div>
+                <div className="saga-info">
+                  <div className="saga-id-label">Saga ID</div>
+                  <div className="saga-id">{saga.sagaId}</div>
+                </div>
                 <span className={`saga-status ${saga.status}`}>{saga.status}</span>
               </div>
 
               {saga.tasks && saga.tasks.length > 0 && (
                 <div className="tasks">
-                  <strong>Tasks:</strong>
-                  {saga.tasks.map((task, idx) => (
-                    <div key={idx} className="task">
-                      <div className="task-name">{task.taskName}</div>
-                      <span className={`task-status ${task.status}`}>{task.status}</span>
-                    </div>
-                  ))}
+                  <div className="tasks-header">
+                    <strong>Tasks ({saga.tasks.length})</strong>
+                  </div>
+                  <div className="tasks-list">
+                    {saga.tasks.map((task, idx) => {
+                      const isExecuting = task.status === 'started';
+                      const isCompensating = task.status === 'compensating';
+                      
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`task ${isExecuting ? 'task-executing' : ''} ${isCompensating ? 'task-compensating' : ''}`}
+                        >
+                          <div className="task-info">
+                            <div className="task-number">#{idx + 1}</div>
+                            <div className="task-details">
+                              <div className="task-name">{task.taskName}</div>
+                              {isExecuting && (
+                                <div className="task-indicator">
+                                  <span className="spinner"></span>
+                                  <span className="task-executing-text">Executing...</span>
+                                </div>
+                              )}
+                              {isCompensating && (
+                                <div className="task-indicator">
+                                  <span className="spinner compensating-spinner"></span>
+                                  <span className="task-compensating-text">Compensating...</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <span className={`task-status task-status-${task.status}`}>
+                            {task.status.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              {/* {saga.status === 'active' && (
+              {saga.status === 'active' && (
                 <div className="actions">
                   <button
                     className="btn btn-abort"
                     onClick={() => handleAbort(saga.sagaId)}
                   >
-                    Abort
+                    Abort Saga
                   </button>
                 </div>
-              )} */}
+              )}
             </div>
           ))}
         </div>
