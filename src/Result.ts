@@ -5,11 +5,11 @@ export class Result<D = unknown> {
     this.data = data
   }
 
-  isError(): this is ResultError {
+  isError(): this is ResultError<Error> {
     return this instanceof ResultError
   }
 
-  isOk(): this is ResultOk {
+  isOk(): this is ResultOk<D> {
     return this instanceof ResultOk
   }
 
@@ -22,11 +22,11 @@ export class Result<D = unknown> {
   }
 
   static ok<D = unknown>(data?: D) {
-    return new ResultOk(data)
+    return new ResultOk<D>(data)
   }
 
   static error<D = unknown>(data: D) {
-    return new ResultError(data)
+    return new ResultError<D>(data)
   }
 }
 
