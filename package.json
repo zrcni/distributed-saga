@@ -1,5 +1,5 @@
 {
-  "name": "distributed-saga",
+  "name": "@zrcni/distributed-saga",
   "version": "0.0.1-alpha.3",
   "author": "zrcni",
   "repository": {
