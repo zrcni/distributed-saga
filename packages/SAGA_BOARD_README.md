@@ -84,6 +84,35 @@ app.listen(3000, () => {
 });
 ```
 
+### TypeScript Configuration
+
+If you're using TypeScript with `ts-node` during development, you may need to configure path mapping. See [TYPESCRIPT_SETUP.md](./TYPESCRIPT_SETUP.md) for detailed instructions.
+
+**Quick setup for ts-node:**
+
+1. Install `tsconfig-paths`:
+   ```bash
+   npm install --save-dev tsconfig-paths
+   ```
+
+2. Add paths to your `tsconfig.json`:
+   ```json
+   {
+     "compilerOptions": {
+       "baseUrl": ".",
+       "paths": {
+         "@saga-board/api": ["./node_modules/@saga-board/api/src"],
+         "@saga-board/express": ["./node_modules/@saga-board/express/src"]
+       }
+     }
+   }
+   ```
+
+3. Register paths when running:
+   ```bash
+   ts-node -r tsconfig-paths/register your-app.ts
+   ```
+
 ## 📖 Configuration
 
 ### Board Options

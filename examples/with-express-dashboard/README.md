@@ -17,6 +17,8 @@ This example shows:
    npm install
    ```
 
+   Note: This automatically installs `tsconfig-paths` which is required for TypeScript module resolution.
+
 2. **Start the server**:
    ```bash
    npm start
@@ -29,6 +31,24 @@ This example shows:
 
 3. **Open the dashboard**:
    Visit http://localhost:3000/admin/sagas
+
+### TypeScript Configuration
+
+This example uses `tsconfig-paths` to resolve the `@saga-board/*` packages from source. The configuration in `tsconfig.json` maps these packages to their source directories:
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@saga-board/api": ["../../packages/api/src"],
+      "@saga-board/express": ["../../packages/express/src"]
+    }
+  }
+}
+```
+
+The `package.json` scripts use `-r tsconfig-paths/register` to enable path mapping at runtime.
 
 ## 📊 What You'll See
 

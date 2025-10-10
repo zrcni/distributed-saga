@@ -5,8 +5,8 @@
   "description": "Example of using Saga Board with Express",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node index.ts",
-    "dev": "ts-node-dev index.ts"
+    "start": "ts-node -r tsconfig-paths/register index.ts",
+    "dev": "ts-node-dev -r tsconfig-paths/register index.ts"
   },
   "dependencies": {
     "@saga-board/api": "file:../../packages/api",
@@ -19,6 +19,7 @@
     "@types/node": "^20.0.0",
     "ts-node": "^10.9.0",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.0.0"
   }
 }
