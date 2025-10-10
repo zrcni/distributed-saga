@@ -6,6 +6,11 @@
     "type": "git",
     "url": "git+https://github.com/zrcni/distributed-saga.git"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "tag": "alpha",
+    "access": "public"
+  },
   "license": "MIT",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
