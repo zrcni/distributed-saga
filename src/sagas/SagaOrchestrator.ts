@@ -20,7 +20,10 @@ export class SagaOrchestrator extends EventEmitter {
         break
       }
 
-      if (!(await saga.isTaskStarted(step.taskName))) {
+      // Check if task is completed, not just started
+      // This ensures that a task that was started but not completed
+      // (e.g., due to server crash) will be retried
+      if (!(await saga.isTaskCompleted(step.taskName))) {
         break
       }
     }
@@ -109,19 +112,24 @@ export class SagaOrchestrator extends EventEmitter {
         prevStepResult = await saga.getEndTaskData(prevStep.taskName)
       }
 
-      const startTaskResult = await saga.startTask(
-        step.taskName,
-        prevStepResult
-      )
-      if (startTaskResult.isError()) {
-        throw startTaskResult.data
+      // Only start the task if it hasn't been started yet
+      // This handles recovery scenarios where a task was started but not completed
+      if (!(await saga.isTaskStarted(step.taskName))) {
+        const startTaskResult = await saga.startTask(
+          step.taskName,
+          prevStepResult
+        )
+        if (startTaskResult.isError()) {
+          throw startTaskResult.data
+        }
+
+        this.emit("taskStarted", {
+          sagaId: saga.sagaId,
+          data,
+          taskName: step.taskName,
+        })
       }
 
-      this.emit("taskStarted", {
-        sagaId: saga.sagaId,
-        data,
-        taskName: step.taskName,
-      })
       const result = await step.invokeCallback(data, prevStepResult)
       const endTaskResult = await saga.endTask(step.taskName, result)
 
