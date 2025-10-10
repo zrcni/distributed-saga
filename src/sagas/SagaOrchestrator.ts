@@ -62,10 +62,12 @@ export class SagaOrchestrator extends EventEmitter {
         sagaId: saga.sagaId,
         data,
         taskName: step.taskName,
+        error: err,
       })
       this.emit("sagaFailed", {
         sagaId: saga.sagaId,
         data,
+        error: err,
       })
       await saga.abortSaga()
       await this.compensate(saga, sagaDefinition)
@@ -182,6 +184,7 @@ export class SagaOrchestrator extends EventEmitter {
             sagaId: saga.sagaId,
             data,
             taskName: step.taskName,
+            error: err,
           })
           // continue compensating other tasks even if one fails
         }
