@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <base href="<%= basePath %>" />
+    <title><%= title %></title>
+    <%- cssLinks %>
+  </head>
+  <body>
+    <script id="__UI_CONFIG__" type="application/json"><%- uiConfig %></script>
+    <div id="root">Loading...</div>
+    <%- jsScripts %>
+  </body>
+</html>

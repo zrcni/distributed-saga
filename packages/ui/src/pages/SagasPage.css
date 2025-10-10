@@ -1,0 +1,143 @@
+.back-btn {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.sagas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.saga-card {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.saga-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.saga-id {
+  font-family: monospace;
+  font-size: 14px;
+  color: #666;
+}
+
+.saga-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.saga-status.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.saga-status.completed {
+  background: var(--success-color);
+  color: white;
+}
+
+.saga-status.aborted {
+  background: var(--danger-color);
+  color: white;
+}
+
+.tasks {
+  margin-top: 10px;
+}
+
+.tasks strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  margin: 4px 0;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.task-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.task-status {
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.task-status.started {
+  background: var(--warning-color);
+  color: white;
+}
+
+.task-status.completed {
+  background: var(--success-color);
+  color: white;
+}
+
+.task-status.compensating {
+  background: #e67e22;
+  color: white;
+}
+
+.task-status.compensated {
+  background: #95a5a6;
+  color: white;
+}
+
+.actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.btn-abort {
+  background: var(--danger-color);
+  color: white;
+}
