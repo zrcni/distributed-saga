@@ -85,7 +85,7 @@ export const SagasPage: React.FC = () => {
                 </div>
               )}
 
-              {saga.status === 'active' && (
+              {/* {saga.status === 'active' && (
                 <div className="actions">
                   <button
                     className="btn btn-abort"
@@ -94,7 +94,7 @@ export const SagasPage: React.FC = () => {
                     Abort
                   </button>
                 </div>
-              )}
+              )} */}
             </div>
           ))}
         </div>
