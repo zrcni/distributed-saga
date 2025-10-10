@@ -2,13 +2,13 @@ import { ISagaAdapter, SagaInfo, SagaBoardRequest, TaskInfo } from './types';
 
 // Re-declare the enum since we can't import from the main package in compilation
 enum SagaMessageType {
-  StartSaga = 0,
-  EndSaga = 1,
-  AbortSaga = 2,
-  StartTask = 3,
-  EndTask = 4,
-  StartCompensatingTask = 5,
-  EndCompensatingTask = 6,
+  StartSaga = "StartSaga",
+  EndSaga = "EndSaga",
+  AbortSaga = "AbortSaga",
+  StartTask = "StartTask",
+  EndTask = "EndTask",
+  StartCompensatingTask = "StartCompensatingTask",
+  EndCompensatingTask = "EndCompensatingTask",
 }
 
 export interface SagaAdapterOptions {
@@ -114,7 +114,7 @@ export class SagaAdapter implements ISagaAdapter {
         }
       }
 
-      const status = sagaCompleted ? 'completed' : sagaAborted ? 'aborted' : 'active';
+      const status: 'active' | 'completed' | 'aborted' = sagaCompleted ? 'completed' : sagaAborted ? 'aborted' : 'active';
 
       return {
         sagaId,
