@@ -40,3 +40,4 @@ export class InvalidSagaStateError extends SagaError {}
 export class InvalidSagaStateUpdateError extends SagaError {}
 export class SagaNotRunningError extends SagaError {}
 export class SagaAlreadyRunningError extends SagaError {}
+export class InvalidSagaDefinitionError extends SagaError {}

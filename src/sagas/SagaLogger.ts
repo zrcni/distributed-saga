@@ -1,83 +1,71 @@
-import { SagaRunner } from "./SagaRunner"
+import { SagaOrchestrator, SagaOrchestratorEvents } from "./SagaOrchestrator"
 
 export class SagaLogger {
-  sagaRunner: SagaRunner<any>
+  sagaOrchestrator: SagaOrchestrator
 
-  constructor(sagaRunner: SagaRunner<any>) {
-    this.sagaRunner = sagaRunner
+  constructor(sagaOrchestrator: SagaOrchestrator) {
+    this.sagaOrchestrator = sagaOrchestrator
   }
 
-  onSagaStarted(listener: (event: { sagaId: string; data: unknown }) => void) {
-    this.sagaRunner.emitter.on("sagaStarted", listener)
+  onSagaStarted(listener: (event: SagaOrchestratorEvents["sagaStarted"]) => void) {
+    this.sagaOrchestrator.on("sagaStarted", listener)
   }
 
   onSagaSucceeded(
-    listener: (event: { sagaId: string; data: unknown }) => void
+    listener: (event: SagaOrchestratorEvents["sagaSucceeded"]) => void
   ) {
-    this.sagaRunner.emitter.on("sagaSucceeded", listener)
+    this.sagaOrchestrator.on("sagaSucceeded", listener)
   }
 
-  onSagaFailed(listener: (event: { sagaId: string; data: unknown }) => void) {
-    this.sagaRunner.emitter.on("sagaFailed", listener)
+  onSagaFailed(listener: (event: SagaOrchestratorEvents["sagaFailed"]) => void) {
+    this.sagaOrchestrator.on("sagaFailed", listener)
   }
 
   onTaskStarted(
-    listener: (event: {
-      sagaId: string
-      data: unknown
-      taskName: string
-    }) => void
+    listener: (event: SagaOrchestratorEvents["taskStarted"]) => void
   ) {
-    this.sagaRunner.emitter.on("taskStarted", listener)
+    this.sagaOrchestrator.on("taskStarted", listener)
   }
 
   onTaskSucceeded(
-    listener: (event: {
-      sagaId: string
-      data: unknown
-      taskName: string
-    }) => void
+    listener: (event: SagaOrchestratorEvents["taskSucceeded"]) => void
   ) {
-    this.sagaRunner.emitter.on("taskSucceeded", listener)
+    this.sagaOrchestrator.on("taskSucceeded", listener)
   }
 
   onTaskFailed(
-    listener: (event: {
-      sagaId: string
-      data: unknown
-      taskName: string
-    }) => void
+    listener: (event: SagaOrchestratorEvents["taskFailed"]) => void
   ) {
-    this.sagaRunner.emitter.on("taskFailed", listener)
+    this.sagaOrchestrator.on("taskFailed", listener)
   }
 
   onCompensationStarted(
-    listener: (event: {
-      sagaId: string
-      data: unknown
-      taskName: string
-    }) => void
+    listener: (event: SagaOrchestratorEvents["compensationStarted"]) => void
   ) {
-    this.sagaRunner.emitter.on("compensationStarted", listener)
+    this.sagaOrchestrator.on("compensationStarted", listener)
   }
 
   onCompensationSucceeded(
-    listener: (event: {
-      sagaId: string
-      data: unknown
-      taskName: string
-    }) => void
+    listener: (event: SagaOrchestratorEvents["compensationSucceeded"]) => void
   ) {
-    this.sagaRunner.emitter.on("compensationSucceeded", listener)
+    this.sagaOrchestrator.on("compensationSucceeded", listener)
   }
 
   onCompensationFailed(
-    listener: (event: {
-      sagaId: string
-      data: unknown
-      taskName: string
-    }) => void
+    listener: (event: SagaOrchestratorEvents["compensationFailed"]) => void
   ) {
-    this.sagaRunner.emitter.on("compensationFailed", listener)
+    this.sagaOrchestrator.on("compensationFailed", listener)
+  }
+
+  onMiddlewareSucceeded(
+    listener: (event: SagaOrchestratorEvents["middlewareSucceeded"]) => void
+  ) {
+    this.sagaOrchestrator.on("middlewareSucceeded", listener)
+  }
+
+  onMiddlewareFailed(
+    listener: (event: SagaOrchestratorEvents["middlewareFailed"]) => void
+  ) {
+    this.sagaOrchestrator.on("middlewareFailed", listener)
   }
 }

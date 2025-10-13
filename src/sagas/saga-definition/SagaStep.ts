@@ -1,5 +1,9 @@
 import { SagaBuilder } from "./SagaBuilder"
-import { StepCompensateCallback, StepInvokeCallback } from "./types"
+import {
+  StepCompensateCallback,
+  StepInvokeCallback,
+  StepMiddlewareCallback,
+} from "./types"
 
 // Default noop function for compensation when not provided
 const noopCompensate: StepCompensateCallback = async () => {}
@@ -8,6 +12,7 @@ export class SagaStep {
   private builder: SagaBuilder
   public invokeCallback: StepInvokeCallback
   public compensateCallback: StepCompensateCallback
+  public middleware: StepMiddlewareCallback[] = []
   public taskName: string
   public isStart = false
   public isEnd = false
@@ -43,6 +48,13 @@ export class SagaStep {
 
   withName(name: string) {
     this.taskName = name
+    return this
+  }
+
+  withMiddleware<Data = unknown, PrevResult = unknown>(
+    callback: StepMiddlewareCallback<Data, PrevResult>
+  ) {
+    this.middleware.push(callback)
     return this
   }
 }

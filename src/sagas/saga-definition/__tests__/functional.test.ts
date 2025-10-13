@@ -1,6 +1,6 @@
 import { step, fromSteps, FunctionalStepBuilder } from "../functional"
 import { SagaDefinition } from "../SagaDefinition"
-import { SagaRunner } from "../../SagaRunner"
+import { SagaOrchestrator } from "../../SagaOrchestrator"
 import { InMemorySagaLog } from "../../InMemorySagaLog"
 
 describe("Functional Saga API", () => {
@@ -62,6 +62,37 @@ describe("Functional Saga API", () => {
         })
 
       expect(stepBuilder.getConfig().name).toBe("payment")
+    })
+
+    it("should allow adding middleware", () => {
+      const middleware1 = jest.fn(async () => {})
+      const middleware2 = jest.fn(async () => {})
+
+      const stepBuilder = step("testStep")
+        .withMiddleware(middleware1)
+        .withMiddleware(middleware2)
+
+      const config = stepBuilder.getConfig()
+      expect(config.middleware).toHaveLength(2)
+      expect(config.middleware![0]).toBe(middleware1)
+      expect(config.middleware![1]).toBe(middleware2)
+    })
+
+    it("should allow chaining invoke, compensate, and middleware", () => {
+      const invokeCallback = jest.fn(async () => ({ result: "test" }))
+      const compensateCallback = jest.fn(async () => {})
+      const middleware = jest.fn(async () => {})
+
+      const stepBuilder = step("testStep")
+        .invoke(invokeCallback)
+        .withMiddleware(middleware)
+        .compensate(compensateCallback)
+
+      const config = stepBuilder.getConfig()
+      expect(config.invoke).toBe(invokeCallback)
+      expect(config.compensate).toBe(compensateCallback)
+      expect(config.middleware).toHaveLength(1)
+      expect(config.middleware![0]).toBe(middleware)
     })
   })
 
@@ -165,11 +196,12 @@ describe("Functional Saga API", () => {
       if (result.isError()) return
 
       const saga = result.data
-      await new SagaRunner(saga, sagaDefinition).run()
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
 
       expect(step1Invoke).toHaveBeenCalledTimes(1)
       expect(step2Invoke).toHaveBeenCalledTimes(1)
-      expect(step2Invoke).toHaveBeenCalledWith({ initial: true }, { value: 1 })
+      expect(step2Invoke).toHaveBeenCalledWith({ initial: true }, { value: 1 }, {})
     })
 
     it("should execute compensation when a step fails", async () => {
@@ -193,7 +225,8 @@ describe("Functional Saga API", () => {
       if (result.isError()) return
 
       const saga = result.data
-      await new SagaRunner(saga, sagaDefinition).run()
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
 
       expect(step1Invoke).toHaveBeenCalledTimes(1)
       expect(step2Invoke).toHaveBeenCalledTimes(1)
@@ -240,11 +273,12 @@ describe("Functional Saga API", () => {
       if (result.isError()) return
 
       const saga = result.data
-      await new SagaRunner(saga, sagaDefinition).run()
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
 
-      expect(step1Invoke).toHaveBeenCalledWith(orderData, null)
-      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result)
-      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result)
+      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {})
+      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {})
+      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {})
     })
 
     it("should execute compensations in reverse order", async () => {
@@ -283,7 +317,8 @@ describe("Functional Saga API", () => {
       if (result.isError()) return
 
       const saga = result.data
-      await new SagaRunner(saga, sagaDefinition).run()
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
 
       // Verify execution order: invocations forward, compensations backward
       expect(executionOrder).toEqual([
@@ -312,7 +347,8 @@ describe("Functional Saga API", () => {
       if (result.isError()) return
 
       const saga = result.data
-      await new SagaRunner(saga, sagaDefinition).run()
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
 
       expect(step1Invoke).toHaveBeenCalledTimes(1)
       expect(step2Invoke).toHaveBeenCalledTimes(1)
@@ -338,7 +374,8 @@ describe("Functional Saga API", () => {
       if (result.isError()) return
 
       const saga = result.data
-      await new SagaRunner(saga, sagaDefinition).run()
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
 
       expect(step1Compensate).toHaveBeenCalledTimes(1)
     })
@@ -398,7 +435,8 @@ describe("Functional Saga API", () => {
       if (result.isError()) return
 
       const saga = result.data
-      await new SagaRunner(saga, sagaDefinition).run()
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
 
       // If we get here without errors, the saga completed successfully
       expect(saga.state.sagaCompleted).toBe(true)
@@ -406,21 +444,17 @@ describe("Functional Saga API", () => {
   })
 
   describe("Functional API Edge Cases", () => {
-    it("should handle steps with no callbacks", () => {
-      const sagaDefinition = fromSteps([{ name: "emptyStep" }])
-
-      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
-      expect(sagaDefinition.steps.length).toBe(3) // StartStep + step + EndStep
+    it("should reject steps with no callbacks", () => {
+      expect(() => fromSteps([{ name: "emptyStep" }])).toThrow(
+        "Saga definition validation failed"
+      )
     })
 
-    it("should handle steps with only compensate callback", () => {
+    it("should reject steps with only compensate callback", () => {
       const compensate = jest.fn(async () => {})
-      const sagaDefinition = fromSteps([step("step1").compensate(compensate)])
-
-      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
-      const step1 = sagaDefinition.steps[1]
-      expect(step1.compensateCallback).toBe(compensate)
-      expect(step1.invokeCallback).toBeUndefined()
+      expect(() => fromSteps([step("step1").compensate(compensate)])).toThrow(
+        "Saga definition validation failed"
+      )
     })
 
     it("should allow reusing step builders", () => {
@@ -476,8 +510,9 @@ describe("Functional Saga API", () => {
       const saga = result.data
 
       // Should not throw even though steps don't have compensate callbacks
+      const orchestrator = new SagaOrchestrator()
       await expect(
-        new SagaRunner(saga, sagaDefinition).run()
+        orchestrator.run(saga, sagaDefinition)
       ).resolves.not.toThrow()
 
       expect(step1Invoke).toHaveBeenCalledTimes(1)
@@ -485,6 +520,201 @@ describe("Functional Saga API", () => {
       
       // Verify compensation was attempted (noop was called)
       expect(saga.state.sagaAborted).toBe(true)
+    })
+
+    it("should execute middleware before step invocation", async () => {
+      const middleware = jest.fn(async () => {})
+      const stepInvoke = jest.fn(async () => ({ value: 1 }))
+
+      const sagaDefinition = fromSteps([
+        step("step1").withMiddleware(middleware).invoke(stepInvoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", { data: "test" })
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(middleware).toHaveBeenCalledTimes(1)
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {})
+      expect(stepInvoke).toHaveBeenCalledTimes(1)
+    })
+
+    it("should execute multiple middleware functions in order", async () => {
+      const executionOrder: string[] = []
+      const middleware1 = jest.fn(async () => {
+        executionOrder.push("middleware1")
+      })
+      const middleware2 = jest.fn(async () => {
+        executionOrder.push("middleware2")
+      })
+      const stepInvoke = jest.fn(async () => {
+        executionOrder.push("invoke")
+        return {}
+      })
+
+      const sagaDefinition = fromSteps([
+        step("step1")
+          .withMiddleware(middleware1)
+          .withMiddleware(middleware2)
+          .invoke(stepInvoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(executionOrder).toEqual(["middleware1", "middleware2", "invoke"])
+    })
+
+    it("should abort saga when middleware fails", async () => {
+      const step1Invoke = jest.fn(async () => ({ value: 1 }))
+      const step1Compensate = jest.fn(async () => {})
+      const middleware = jest
+        .fn()
+        .mockRejectedValue(new Error("Middleware failed"))
+      const step2Invoke = jest.fn(async () => ({ value: 2 }))
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke).compensate(step1Compensate),
+        step("step2").withMiddleware(middleware).invoke(step2Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(step1Invoke).toHaveBeenCalledTimes(1)
+      expect(middleware).toHaveBeenCalledTimes(1)
+      expect(step2Invoke).not.toHaveBeenCalled()
+      expect(step1Compensate).toHaveBeenCalledTimes(1)
+      expect(saga.state.sagaAborted).toBe(true)
+    })
+
+    it("should abort saga when middleware returns false", async () => {
+      const step1Invoke = jest.fn(async () => ({ value: 1 }))
+      const step1Compensate = jest.fn(async () => {})
+      const middleware = jest.fn().mockReturnValue(false)
+      const step2Invoke = jest.fn(async () => ({ value: 2 }))
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke).compensate(step1Compensate),
+        step("step2").withMiddleware(middleware).invoke(step2Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(step1Invoke).toHaveBeenCalledTimes(1)
+      expect(middleware).toHaveBeenCalledTimes(1)
+      expect(step2Invoke).not.toHaveBeenCalled()
+      expect(step1Compensate).toHaveBeenCalledTimes(1)
+      expect(saga.state.sagaAborted).toBe(true)
+    })
+
+    it("should pass previous step result to middleware", async () => {
+      const step1Result = { value: 100 }
+      const step1Invoke = jest.fn(async () => step1Result)
+      const middleware = jest.fn(async (data, prevResult) => {
+        expect(prevResult).toEqual(step1Result)
+      })
+      const step2Invoke = jest.fn(async () => ({ value: 2 }))
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke),
+        step("step2").withMiddleware(middleware).invoke(step2Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", { data: "test" })
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {})
+      expect(step2Invoke).toHaveBeenCalledTimes(1)
+    })
+
+    it("should accumulate and merge middleware data", async () => {
+      const middleware1 = jest.fn(async () => ({ key1: "value1" }))
+      const middleware2 = jest.fn(async (data, prevResult, middlewareData) => {
+        expect(middlewareData).toEqual({ key1: "value1" })
+        return { key2: "value2" }
+      })
+      const stepInvoke = jest.fn(async (data, prevResult, middlewareData) => {
+        expect(middlewareData).toEqual({ key1: "value1", key2: "value2" })
+        return { value: 1 }
+      })
+
+      const sagaDefinition = fromSteps([
+        step("step1")
+          .withMiddleware(middleware1)
+          .withMiddleware(middleware2)
+          .invoke(stepInvoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(middleware1).toHaveBeenCalled()
+      expect(middleware2).toHaveBeenCalled()
+      expect(stepInvoke).toHaveBeenCalled()
+    })
+
+    it("should support middleware in config object format", async () => {
+      const middleware1 = jest.fn(async () => {})
+      const middleware2 = jest.fn(async () => {})
+      const stepInvoke = jest.fn(async () => ({ value: 1 }))
+
+      const sagaDefinition = fromSteps([
+        {
+          name: "step1",
+          invoke: stepInvoke,
+          middleware: [middleware1, middleware2],
+        },
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(middleware1).toHaveBeenCalledTimes(1)
+      expect(middleware2).toHaveBeenCalledTimes(1)
+      expect(stepInvoke).toHaveBeenCalledTimes(1)
     })
   })
 })
