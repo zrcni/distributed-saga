@@ -455,5 +455,36 @@ describe("Functional Saga API", () => {
       expect(sagaDefinition.steps[2].taskName).toBe("secondStep")
       expect(sagaDefinition.steps[3].taskName).toBe("thirdStep")
     })
+
+    it("should handle compensation for steps without compensate callbacks", async () => {
+      const step1Invoke = jest.fn(async () => ({ value: 1 }))
+      const step2Invoke = jest.fn(async () => {
+        throw new Error("Step 2 failed")
+      })
+
+      // Neither step has a compensate callback
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke),
+        step("step2").invoke(step2Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+
+      // Should not throw even though steps don't have compensate callbacks
+      await expect(
+        new SagaRunner(saga, sagaDefinition).run()
+      ).resolves.not.toThrow()
+
+      expect(step1Invoke).toHaveBeenCalledTimes(1)
+      expect(step2Invoke).toHaveBeenCalledTimes(1)
+      
+      // Verify compensation was attempted (noop was called)
+      expect(saga.state.sagaAborted).toBe(true)
+    })
   })
 })

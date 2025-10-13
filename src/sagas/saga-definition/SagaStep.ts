@@ -1,6 +1,9 @@
 import { SagaBuilder } from "./SagaBuilder"
 import { StepCompensateCallback, StepInvokeCallback } from "./types"
 
+// Default noop function for compensation when not provided
+const noopCompensate: StepCompensateCallback = async () => {}
+
 export class SagaStep {
   private builder: SagaBuilder
   public invokeCallback: StepInvokeCallback
@@ -11,6 +14,8 @@ export class SagaStep {
 
   constructor(builder: SagaBuilder) {
     this.builder = builder
+    // Initialize with noop function to make compensation optional
+    this.compensateCallback = noopCompensate
   }
 
   next() {
