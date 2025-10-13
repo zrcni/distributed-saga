@@ -29,7 +29,7 @@ npm run test:mongo
 
 ### Run a specific test file
 ```bash
-npm test -- SagaRunner.test.ts
+npm test -- SagaOrchestrator.test.ts
 ```
 
 ### Run tests matching a pattern

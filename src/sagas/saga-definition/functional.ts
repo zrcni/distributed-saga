@@ -1,7 +1,11 @@
 import { SagaDefinition } from "./SagaDefinition"
 import { SagaStep, StartStep, EndStep } from "./SagaStep"
 import { SagaBuilder } from "./SagaBuilder"
-import { StepInvokeCallback, StepCompensateCallback } from "./types"
+import {
+  StepInvokeCallback,
+  StepCompensateCallback,
+  StepMiddlewareCallback,
+} from "./types"
 
 /**
  * Represents a step configuration in the functional API
@@ -15,6 +19,7 @@ export interface StepConfig<
   name: string
   invoke?: StepInvokeCallback<Data, PrevResult, ResultData>
   compensate?: StepCompensateCallback<Data, TaskData, ResultData>
+  middleware?: StepMiddlewareCallback<Data, PrevResult>[]
 }
 
 /**
@@ -28,7 +33,7 @@ export class FunctionalStepBuilder<
   private config: StepConfig<Data, PrevResult, ResultData>
 
   constructor(name: string) {
-    this.config = { name }
+    this.config = { name, middleware: [] }
   }
 
   /**
@@ -52,6 +57,19 @@ export class FunctionalStepBuilder<
   }
 
   /**
+   * Add a middleware function to this step
+   */
+  withMiddleware(
+    callback: StepMiddlewareCallback<Data, PrevResult>
+  ): FunctionalStepBuilder<Data, PrevResult, ResultData> {
+    if (!this.config.middleware) {
+      this.config.middleware = []
+    }
+    this.config.middleware.push(callback)
+    return this
+  }
+
+  /**
    * Get the configuration for this step
    * @internal
    */
@@ -69,6 +87,9 @@ export class FunctionalStepBuilder<
  *   .invoke(async (data) => ({ paymentId: '123' }))
  *   .compensate(async (data, result) => {
  *     await refundPayment(result.paymentId)
+ *   })
+ *   .withMiddleware(async (data, prevResult) => {
+ *     if (data.amount <= 0) throw new Error('Invalid amount')
  *   })
  * ```
  */
@@ -89,6 +110,12 @@ function createSagaStep(builder: SagaBuilder, config: StepConfig): SagaStep {
 
   if (config.compensate) {
     sagaStep.compensate(config.compensate)
+  }
+
+  if (config.middleware && config.middleware.length > 0) {
+    for (const middleware of config.middleware) {
+      sagaStep.withMiddleware(middleware)
+    }
   }
 
   return sagaStep
