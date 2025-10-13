@@ -1,0 +1,459 @@
+import { step, fromSteps, FunctionalStepBuilder } from "../functional"
+import { SagaDefinition } from "../SagaDefinition"
+import { SagaRunner } from "../../SagaRunner"
+import { InMemorySagaLog } from "../../InMemorySagaLog"
+
+describe("Functional Saga API", () => {
+  describe("FunctionalStepBuilder", () => {
+    it("should create a step with a name", () => {
+      const stepBuilder = step("testStep")
+      expect(stepBuilder).toBeInstanceOf(FunctionalStepBuilder)
+      expect(stepBuilder.getConfig().name).toBe("testStep")
+    })
+
+    it("should allow setting an invoke callback", () => {
+      const invokeCallback = jest.fn(async (data: any) => ({ result: "test" }))
+      const stepBuilder = step("testStep").invoke(invokeCallback)
+
+      expect(stepBuilder.getConfig().invoke).toBe(invokeCallback)
+    })
+
+    it("should allow setting a compensate callback", () => {
+      const compensateCallback = jest.fn(async () => {})
+      const stepBuilder = step("testStep").compensate(compensateCallback)
+
+      expect(stepBuilder.getConfig().compensate).toBe(compensateCallback)
+    })
+
+    it("should allow chaining invoke and compensate", () => {
+      const invokeCallback = jest.fn(async () => ({ result: "test" }))
+      const compensateCallback = jest.fn(async () => {})
+
+      const stepBuilder = step("testStep")
+        .invoke(invokeCallback)
+        .compensate(compensateCallback)
+
+      const config = stepBuilder.getConfig()
+      expect(config.invoke).toBe(invokeCallback)
+      expect(config.compensate).toBe(compensateCallback)
+    })
+
+    it("should maintain type safety with typed data", () => {
+      interface StepData {
+        userId: string
+        amount: number
+      }
+
+      interface StepResult {
+        transactionId: string
+      }
+
+      const stepBuilder = step<StepData>("payment")
+        .invoke<StepResult>(async (data, prev) => {
+          // TypeScript should enforce correct types here
+          const userId: string = data.userId
+          const amount: number = data.amount
+          return { transactionId: `txn-${userId}-${amount}` }
+        })
+        .compensate(async (data, result) => {
+          // TypeScript should enforce correct types here
+          const txnId: string = result.transactionId
+          console.log(`Refunding ${txnId}`)
+        })
+
+      expect(stepBuilder.getConfig().name).toBe("payment")
+    })
+  })
+
+  describe("fromSteps", () => {
+    it("should create a SagaDefinition from an array of step configs", () => {
+      const steps = [
+        { name: "step1", invoke: async () => ({ result: 1 }) },
+        { name: "step2", invoke: async () => ({ result: 2 }) },
+      ]
+
+      const sagaDefinition = fromSteps(steps)
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      expect(sagaDefinition.steps.length).toBe(4) // StartStep + 2 steps + EndStep
+    })
+
+    it("should create a SagaDefinition from FunctionalStepBuilder instances", () => {
+      const steps = [
+        step("step1").invoke(async () => ({ result: 1 })),
+        step("step2").invoke(async () => ({ result: 2 })),
+      ]
+
+      const sagaDefinition = fromSteps(steps)
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      expect(sagaDefinition.steps.length).toBe(4)
+    })
+
+    it("should create a SagaDefinition from mixed step types", () => {
+      const steps = [
+        step("step1").invoke(async () => ({ result: 1 })),
+        { name: "step2", invoke: async () => ({ result: 2 }) },
+      ]
+
+      const sagaDefinition = fromSteps(steps)
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      expect(sagaDefinition.steps.length).toBe(4)
+    })
+
+    it("should create steps with compensate callbacks", () => {
+      const compensateCallback = jest.fn(async () => {})
+      const steps = [
+        step("step1")
+          .invoke(async () => ({ result: 1 }))
+          .compensate(compensateCallback),
+      ]
+
+      const sagaDefinition = fromSteps(steps)
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      // Verify the step has the compensate callback
+      const step1 = sagaDefinition.steps[1] // Skip StartStep
+      expect(step1.compensateCallback).toBe(compensateCallback)
+    })
+
+    it("should handle empty step arrays", () => {
+      const sagaDefinition = fromSteps([])
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      expect(sagaDefinition.steps.length).toBe(2) // StartStep + EndStep
+    })
+
+    it("should accept SagaStep instances", () => {
+      const steps = [step("step1").invoke(async () => ({ result: 1 }))]
+      const sagaDef1 = fromSteps(steps)
+      const sagaStep = sagaDef1.steps[1] // Get the actual SagaStep
+
+      // Should be able to mix SagaStep with other types
+      const sagaDef2 = fromSteps([
+        sagaStep,
+        step("step2").invoke(async () => ({ result: 2 })),
+      ])
+
+      expect(sagaDef2).toBeInstanceOf(SagaDefinition)
+      expect(sagaDef2.steps.length).toBe(4)
+    })
+  })
+
+  describe("Functional API Integration Tests", () => {
+    beforeEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it("should execute a simple saga with functional API", async () => {
+      const step1Invoke = jest.fn(async () => ({ value: 1 }))
+      const step2Invoke = jest.fn(async (data: any, prev: any) => ({
+        value: prev.value + 1,
+      }))
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke),
+        step("step2").invoke(step2Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {
+        initial: true,
+      })
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      await new SagaRunner(saga, sagaDefinition).run()
+
+      expect(step1Invoke).toHaveBeenCalledTimes(1)
+      expect(step2Invoke).toHaveBeenCalledTimes(1)
+      expect(step2Invoke).toHaveBeenCalledWith({ initial: true }, { value: 1 })
+    })
+
+    it("should execute compensation when a step fails", async () => {
+      const step1Invoke = jest.fn(async () => ({ value: 1 }))
+      const step1Compensate = jest.fn(async () => {})
+      const step2Invoke = jest.fn(async () => {
+        throw new Error("Step 2 failed")
+      })
+      const step2Compensate = jest.fn(async () => {})
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke).compensate(step1Compensate),
+        step("step2").invoke(step2Invoke).compensate(step2Compensate),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {
+        initial: true,
+      })
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      await new SagaRunner(saga, sagaDefinition).run()
+
+      expect(step1Invoke).toHaveBeenCalledTimes(1)
+      expect(step2Invoke).toHaveBeenCalledTimes(1)
+
+      // Step1 should be compensated since step2 failed
+      expect(step1Compensate).toHaveBeenCalledTimes(1)
+      // Step2 should not be compensated (it never succeeded)
+      expect(step2Compensate).not.toHaveBeenCalled()
+    })
+
+    it("should pass data through multiple steps", async () => {
+      interface OrderData {
+        orderId: string
+        amount: number
+      }
+
+      const step1Result = { paymentId: "pay-123" }
+      const step2Result = { inventoryId: "inv-456" }
+
+      const step1Invoke = jest.fn(async (data: OrderData) => step1Result)
+      const step2Invoke = jest.fn(
+        async (data: OrderData, prev: typeof step1Result) => {
+          expect(prev.paymentId).toBe("pay-123")
+          return step2Result
+        }
+      )
+      const step3Invoke = jest.fn(
+        async (data: OrderData, prev: typeof step2Result) => {
+          expect(prev.inventoryId).toBe("inv-456")
+          return { completed: true }
+        }
+      )
+
+      const sagaDefinition = fromSteps([
+        step<OrderData>("processPayment").invoke(step1Invoke),
+        step<OrderData>("reserveInventory").invoke(step2Invoke),
+        step<OrderData>("sendConfirmation").invoke(step3Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const orderData: OrderData = { orderId: "order-1", amount: 100 }
+      const result = await coordinator.createSaga("test-saga", orderData)
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      await new SagaRunner(saga, sagaDefinition).run()
+
+      expect(step1Invoke).toHaveBeenCalledWith(orderData, null)
+      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result)
+      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result)
+    })
+
+    it("should execute compensations in reverse order", async () => {
+      const executionOrder: string[] = []
+
+      const step1Invoke = jest.fn(async () => {
+        executionOrder.push("step1-invoke")
+        return {}
+      })
+      const step1Compensate = jest.fn(async () => {
+        executionOrder.push("step1-compensate")
+      })
+
+      const step2Invoke = jest.fn(async () => {
+        executionOrder.push("step2-invoke")
+        return {}
+      })
+      const step2Compensate = jest.fn(async () => {
+        executionOrder.push("step2-compensate")
+      })
+
+      const step3Invoke = jest.fn(async () => {
+        executionOrder.push("step3-invoke")
+        throw new Error("Step 3 failed")
+      })
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke).compensate(step1Compensate),
+        step("step2").invoke(step2Invoke).compensate(step2Compensate),
+        step("step3").invoke(step3Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      await new SagaRunner(saga, sagaDefinition).run()
+
+      // Verify execution order: invocations forward, compensations backward
+      expect(executionOrder).toEqual([
+        "step1-invoke",
+        "step2-invoke",
+        "step3-invoke",
+        "step2-compensate",
+        "step1-compensate",
+      ])
+    })
+
+    it("should handle synchronous invoke callbacks", async () => {
+      const step1Invoke = jest.fn(() => ({ value: 1 }))
+      const step2Invoke = jest.fn((data: any, prev: any) => ({
+        value: prev.value + 1,
+      }))
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke),
+        step("step2").invoke(step2Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      await new SagaRunner(saga, sagaDefinition).run()
+
+      expect(step1Invoke).toHaveBeenCalledTimes(1)
+      expect(step2Invoke).toHaveBeenCalledTimes(1)
+    })
+
+    it("should handle synchronous compensate callbacks", async () => {
+      const step1Invoke = jest.fn(async () => ({ value: 1 }))
+      const step1Compensate = jest.fn(() => {
+        // Synchronous compensation
+      })
+      const step2Invoke = jest.fn(async () => {
+        throw new Error("Step 2 failed")
+      })
+
+      const sagaDefinition = fromSteps([
+        step("step1").invoke(step1Invoke).compensate(step1Compensate),
+        step("step2").invoke(step2Invoke),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const result = await coordinator.createSaga("test-saga", {})
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      await new SagaRunner(saga, sagaDefinition).run()
+
+      expect(step1Compensate).toHaveBeenCalledTimes(1)
+    })
+
+    it("should work with complex data transformations", async () => {
+      interface UserRegistration {
+        email: string
+        password: string
+      }
+
+      const sagaDefinition = fromSteps([
+        step<UserRegistration>("validateEmail").invoke(async (data) => {
+          const isValid = data.email.includes("@")
+          if (!isValid) throw new Error("Invalid email")
+          return { emailValid: true }
+        }),
+
+        step<UserRegistration>("hashPassword").invoke(
+          async (data, prev: any) => {
+            const hashedPassword = `hashed_${data.password}`
+            return { hashedPassword, emailValid: prev?.emailValid }
+          }
+        ),
+
+        step<UserRegistration>("createUser").invoke(async (data, prev: any) => {
+          const userId = "user-123"
+          return {
+            userId,
+            email: data.email,
+            hashedPassword: prev?.hashedPassword,
+            emailValid: prev?.emailValid,
+          }
+        }),
+
+        step<UserRegistration>("sendWelcomeEmail")
+          .invoke(async (data, prev: any) => {
+            return {
+              emailSent: true,
+              userId: prev?.userId,
+              email: prev?.email,
+              hashedPassword: prev?.hashedPassword,
+              emailValid: prev?.emailValid,
+            }
+          })
+          .compensate(async (data, taskData: any) => {
+            // Would send cancellation email in real scenario
+          }),
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const registrationData: UserRegistration = {
+        email: "test@example.com",
+        password: "secret123",
+      }
+      const result = await coordinator.createSaga("test-saga", registrationData)
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      const saga = result.data
+      await new SagaRunner(saga, sagaDefinition).run()
+
+      // If we get here without errors, the saga completed successfully
+      expect(saga.state.sagaCompleted).toBe(true)
+    })
+  })
+
+  describe("Functional API Edge Cases", () => {
+    it("should handle steps with no callbacks", () => {
+      const sagaDefinition = fromSteps([{ name: "emptyStep" }])
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      expect(sagaDefinition.steps.length).toBe(3) // StartStep + step + EndStep
+    })
+
+    it("should handle steps with only compensate callback", () => {
+      const compensate = jest.fn(async () => {})
+      const sagaDefinition = fromSteps([step("step1").compensate(compensate)])
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      const step1 = sagaDefinition.steps[1]
+      expect(step1.compensateCallback).toBe(compensate)
+      expect(step1.invokeCallback).toBeUndefined()
+    })
+
+    it("should allow reusing step builders", () => {
+      const reusableStep = step("reusable").invoke(async () => ({ value: 1 }))
+
+      const saga1 = fromSteps([reusableStep])
+      const saga2 = fromSteps([reusableStep])
+
+      expect(saga1).toBeInstanceOf(SagaDefinition)
+      expect(saga2).toBeInstanceOf(SagaDefinition)
+    })
+
+    it("should handle large number of steps", () => {
+      const steps = Array.from({ length: 100 }, (_, i) =>
+        step(`step${i}`).invoke(async () => ({ index: i }))
+      )
+
+      const sagaDefinition = fromSteps(steps)
+
+      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
+      expect(sagaDefinition.steps.length).toBe(102) // StartStep + 100 steps + EndStep
+    })
+
+    it("should preserve step names correctly", () => {
+      const sagaDefinition = fromSteps([
+        step("firstStep").invoke(async () => ({})),
+        step("secondStep").invoke(async () => ({})),
+        { name: "thirdStep", invoke: async () => ({}) },
+      ])
+
+      expect(sagaDefinition.steps[1].taskName).toBe("firstStep")
+      expect(sagaDefinition.steps[2].taskName).toBe("secondStep")
+      expect(sagaDefinition.steps[3].taskName).toBe("thirdStep")
+    })
+  })
+})
