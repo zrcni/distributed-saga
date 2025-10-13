@@ -406,21 +406,17 @@ describe("Functional Saga API", () => {
   })
 
   describe("Functional API Edge Cases", () => {
-    it("should handle steps with no callbacks", () => {
-      const sagaDefinition = fromSteps([{ name: "emptyStep" }])
-
-      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
-      expect(sagaDefinition.steps.length).toBe(3) // StartStep + step + EndStep
+    it("should reject steps with no callbacks", () => {
+      expect(() => fromSteps([{ name: "emptyStep" }])).toThrow(
+        "Saga definition validation failed"
+      )
     })
 
-    it("should handle steps with only compensate callback", () => {
+    it("should reject steps with only compensate callback", () => {
       const compensate = jest.fn(async () => {})
-      const sagaDefinition = fromSteps([step("step1").compensate(compensate)])
-
-      expect(sagaDefinition).toBeInstanceOf(SagaDefinition)
-      const step1 = sagaDefinition.steps[1]
-      expect(step1.compensateCallback).toBe(compensate)
-      expect(step1.invokeCallback).toBeUndefined()
+      expect(() => fromSteps([step("step1").compensate(compensate)])).toThrow(
+        "Saga definition validation failed"
+      )
     })
 
     it("should allow reusing step builders", () => {
