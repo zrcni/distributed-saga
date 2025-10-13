@@ -9,6 +9,8 @@ interface SagaDocument {
   _id: ObjectId
   sagaId: string
   messages: SagaMessage[]
+  createdAt: Date
+  updatedAt: Date
 }
 
 export class MongoDBSagaLog implements SagaLog {
@@ -74,10 +76,13 @@ export class MongoDBSagaLog implements SagaLog {
 
       const msg = SagaMessage.createStartSagaMessage(sagaId, job)
 
+      const now = new Date()
       await this.collection.insertOne({
         _id: new ObjectId(),
         sagaId,
         messages: [msg],
+        createdAt: now,
+        updatedAt: now,
       })
 
       return Result.ok()
@@ -97,7 +102,10 @@ export class MongoDBSagaLog implements SagaLog {
     try {
       const result = await this.collection.updateOne(
         { sagaId: msg.sagaId },
-        { $push: { messages: msg } }
+        {
+          $push: { messages: msg },
+          $set: { updatedAt: new Date() },
+        }
       )
 
       if (result.matchedCount === 0) {
@@ -141,6 +149,50 @@ export class MongoDBSagaLog implements SagaLog {
       return Result.error(
         new SagaNotRunningError("failed to delete saga", {
           sagaId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      )
+    }
+  }
+
+  /**
+   * Delete sagas older than a specific date
+   * Useful for cleaning up old completed or abandoned sagas
+   */
+  async deleteOldSagas(
+    olderThan: Date
+  ): Promise<ResultOk<number> | ResultError> {
+    try {
+      const result = await this.collection.deleteMany({
+        updatedAt: { $lt: olderThan },
+      })
+      return Result.ok(result.deletedCount)
+    } catch (error) {
+      return Result.error(
+        new SagaNotRunningError("failed to delete old sagas", {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      )
+    }
+  }
+
+  /**
+   * Get sagas that haven't been updated since a specific date
+   * Useful for finding stale or abandoned sagas
+   */
+  async getStaleSagaIds(
+    olderThan: Date
+  ): Promise<ResultOk<string[]> | ResultError> {
+    try {
+      const docs = await this.collection
+        .find({ updatedAt: { $lt: olderThan } })
+        .project<Pick<SagaDocument, "sagaId">>({ sagaId: 1 })
+        .toArray()
+      const sagaIds = docs.map((doc) => doc.sagaId)
+      return Result.ok(sagaIds)
+    } catch (error) {
+      return Result.error(
+        new SagaNotRunningError("failed to get stale saga IDs", {
           error: error instanceof Error ? error.message : String(error),
         })
       )

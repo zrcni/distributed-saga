@@ -22,6 +22,8 @@ export class SagaState<D = unknown> {
   taskStatus: Record<string, TaskStatus>
   sagaAborted: boolean
   sagaCompleted: boolean
+  createdAt: Date
+  updatedAt: Date
 
   constructor(sagaId: string, job: D) {
     this.sagaId = sagaId
@@ -30,6 +32,8 @@ export class SagaState<D = unknown> {
     this.taskStatus = {}
     this.sagaAborted = false
     this.sagaCompleted = false
+    this.createdAt = new Date()
+    this.updatedAt = new Date()
   }
 
   getTaskIds() {
