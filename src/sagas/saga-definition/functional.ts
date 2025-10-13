@@ -84,14 +84,11 @@ export function step<Data = unknown>(
  */
 function createSagaStep(builder: SagaBuilder, config: StepConfig): SagaStep {
   const sagaStep = new SagaStep(builder)
-  sagaStep.taskName = config.name
-
-  if (config.invoke) {
-    sagaStep.invokeCallback = config.invoke
-  }
+    .withName(config.name)
+    .invoke(config.invoke)
 
   if (config.compensate) {
-    sagaStep.compensateCallback = config.compensate
+    sagaStep.compensate(config.compensate)
   }
 
   return sagaStep
