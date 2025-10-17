@@ -6,6 +6,8 @@ interface SagaDocument {
   _id: ObjectId
   sagaId: string
   messages: SagaMessage[]
+  createdAt: Date
+  updatedAt: Date
 }
 
 describe("MongoDBSagaLog", () => {
