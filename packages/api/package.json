@@ -1,5 +1,5 @@
 {
-  "name": "@saga-board/api",
+  "name": "@zrcni/distributed-saga-board-api",
   "version": "0.0.1",
   "description": "Saga Board API - Core API for monitoring distributed sagas",
   "main": "./dist/index.js",

@@ -18,7 +18,7 @@
                                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                       SagaAdapter                                │
-│  (from @saga-board/api)                                          │
+│  (from @zrcni/distributed-saga-board-api)                        │
 │  - Provides read interface to saga state                         │
 │  - Implements visibility guards                                  │
 │  - Enables saga actions (abort, retry)                           │
@@ -28,7 +28,7 @@
                                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                      createSagaBoard()                           │
-│  (from @saga-board/api)                                          │
+│  (from @zrcni/distributed-saga-board-api)                        │
 │  - Manages multiple adapters                                     │
 │  - Configures UI options                                         │
 │  - Coordinates with server adapter                               │
@@ -103,17 +103,17 @@ Browser → HTTP POST /api/sources/:name/sagas/:id/abort
 ## Package Dependencies
 
 ```
-@saga-board/express
-    ├── @saga-board/api
-    ├── @saga-board/ui
+@zrcni/distributed-saga-board-express
+    ├── @zrcni/distributed-saga-board-api
+    ├── @zrcni/distributed-saga-board-ui
     └── express (peer dependency)
 
-@saga-board/api
+@zrcni/distributed-saga-board-api
     └── @zrcni/distributed-saga (peer dependency)
 
 Example Application
-    ├── @saga-board/api
-    ├── @saga-board/express
+    ├── @zrcni/distributed-saga-board-api
+    ├── @zrcni/distributed-saga-board-express
     ├── @zrcni/distributed-saga
     └── express
 ```

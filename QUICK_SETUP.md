@@ -7,7 +7,7 @@ Get your Saga Dashboard up and running in 5 minutes!
 ### Step 1: Install Dependencies
 
 ```bash
-npm install @saga-board/api @saga-board/express
+npm install @zrcni/distributed-saga-board-api @zrcni/distributed-saga-board-express
 ```
 
 ### Step 2: Add to Your Express App
@@ -15,8 +15,8 @@ npm install @saga-board/api @saga-board/express
 ```typescript
 // Import required packages
 import express from 'express';
-import { createSagaBoard, SagaAdapter } from '@saga-board/api';
-import { ExpressAdapter } from '@saga-board/express';
+import { createSagaBoard, SagaAdapter } from '@zrcni/distributed-saga-board-api';
+import { ExpressAdapter } from '@zrcni/distributed-saga-board-express';
 
 const app = express();
 

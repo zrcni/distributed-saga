@@ -1,5 +1,5 @@
 {
-  "name": "@saga-board/express",
+  "name": "@zrcni/distributed-saga-board-express",
   "version": "0.0.1",
   "description": "Saga Board Express Adapter - Express.js adapter for Saga Dashboard",
   "main": "./dist/index.js",
@@ -18,8 +18,8 @@
     "express"
   ],
   "dependencies": {
-    "@saga-board/api": "file:../api",
-    "@saga-board/ui": "file:../ui",
+    "@zrcni/distributed-saga-board-api": "file:../api",
+    "@zrcni/distributed-saga-board-ui": "file:../ui",
     "ejs": "^3.1.9"
   },
   "peerDependencies": {

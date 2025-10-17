@@ -7,10 +7,10 @@ Complete guide for setting up and developing with Saga Board packages.
 ```
 distributed-saga/
 ├── src/                          # Main distributed-saga library
-├── packages/                     # Saga Board packages
-│   ├── api/                     # @saga-board/api
-│   ├── express/                 # @saga-board/express
-│   └── ui/                      # @saga-board/ui
+├── packages/
+│   ├── api/                     # @zrcni/distributed-saga-board-api
+│   ├── express/                 # @zrcni/distributed-saga-board-express
+│   └── ui/                      # @zrcni/distributed-saga-board-ui
 └── examples/
     └── with-express-dashboard/  # Example application
 ```
@@ -54,8 +54,8 @@ Maps to sibling packages:
 ```json
 {
   "paths": {
-    "@saga-board/api": ["../api/src"],
-    "@saga-board/ui": ["../ui/src"]
+    "@zrcni/distributed-saga-board-api": ["../api/src"],
+    "@zrcni/distributed-saga-board-ui": ["../ui/src"]
   }
 }
 ```
@@ -65,9 +65,9 @@ Maps to package sources:
 ```json
 {
   "paths": {
-    "@saga-board/api": ["../../packages/api/src"],
-    "@saga-board/express": ["../../packages/express/src"],
-    "@saga-board/ui": ["../../packages/ui/src"]
+    "@zrcni/distributed-saga-board-api": ["../../packages/api/src"],
+    "@zrcni/distributed-saga-board-express": ["../../packages/express/src"],
+    "@zrcni/distributed-saga-board-ui": ["../../packages/ui/src"]
   }
 }
 ```
@@ -155,7 +155,7 @@ curl -X POST http://localhost:3000/admin/sagas/api/sources/Orders/sagas/order-00
 
 ### TypeScript Errors
 
-**Problem**: `Cannot find module '@saga-board/api'`
+**Problem**: `Cannot find module '@zrcni/distributed-saga-board-api'`
 
 **Solution**: 
 1. Check that `tsconfig.json` has correct path mappings

@@ -13,8 +13,8 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../api/src"],
-      "@saga-board/ui": ["../ui/src"]
+      "@zrcni/distributed-saga-board-api": ["../api/src"],
+      "@zrcni/distributed-saga-board-ui": ["../ui/src"]
     }
   },
   "include": ["src/**/*"],

@@ -1,4 +1,4 @@
-# @saga-board/ui
+# @zrcni/distributed-saga-board-ui
 
 React TypeScript UI for Saga Board Dashboard.
 
@@ -51,7 +51,7 @@ The build process creates:
 
 ## Integration with Express Adapter
 
-The Express adapter (@saga-board/express) serves the built UI:
+The Express adapter (@zrcni/distributed-saga-board-express) serves the built UI:
 
 1. Reads `index.ejs` template from the package root
 2. Renders it with server configuration (basePath, uiConfig, etc.)

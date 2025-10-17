@@ -34,15 +34,15 @@ This example shows:
 
 ### TypeScript Configuration
 
-This example uses `tsconfig-paths` to resolve the `@saga-board/*` packages from source. The configuration in `tsconfig.json` maps these packages to their source directories:
+This example uses `tsconfig-paths` to resolve the `@zrcni/distributed-saga-board-*` packages from source. The configuration in `tsconfig.json` maps these packages to their source directories:
 
 ```json
 {
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../../packages/api/src"],
-      "@saga-board/express": ["../../packages/express/src"]
+      "@zrcni/distributed-saga-board-api": ["../../packages/api/src"],
+      "@zrcni/distributed-saga-board-express": ["../../packages/express/src"]
     }
   }
 }

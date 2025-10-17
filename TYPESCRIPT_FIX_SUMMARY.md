@@ -2,11 +2,11 @@
 
 ## 🎯 Problem
 
-TypeScript and ts-node could not resolve the `@saga-board/*` packages when using local `file:` dependencies, resulting in compilation errors:
+TypeScript and ts-node could not resolve the `@zrcni/distributed-saga-board-*` packages when using local `file:` dependencies, resulting in compilation errors:
 
 ```
-error TS2307: Cannot find module '@saga-board/api' or its corresponding type declarations.
-error TS2307: Cannot find module '@saga-board/express' or its corresponding type declarations.
+error TS2307: Cannot find module '@zrcni/distributed-saga-board-api' or its corresponding type declarations.
+error TS2307: Cannot find module '@zrcni/distributed-saga-board-express' or its corresponding type declarations.
 ```
 
 ## ✅ Solution Implemented
@@ -19,9 +19,9 @@ error TS2307: Cannot find module '@saga-board/express' or its corresponding type
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../../packages/api/src"],
-      "@saga-board/express": ["../../packages/express/src"],
-      "@saga-board/ui": ["../../packages/ui/src"]
+      "@zrcni/distributed-saga-board-api": ["../../packages/api/src"],
+      "@zrcni/distributed-saga-board-express": ["../../packages/express/src"],
+      "@zrcni/distributed-saga-board-ui": ["../../packages/ui/src"]
     }
   }
 }
@@ -33,8 +33,8 @@ error TS2307: Cannot find module '@saga-board/express' or its corresponding type
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../api/src"],
-      "@saga-board/ui": ["../ui/src"]
+      "@zrcni/distributed-saga-board-api": ["../api/src"],
+      "@zrcni/distributed-saga-board-ui": ["../ui/src"]
     }
   }
 }
@@ -144,13 +144,13 @@ Created example sagas
 When packages are published to npm, consumers won't need path mappings - they'll just:
 
 ```bash
-npm install @saga-board/api @saga-board/express
+npm install @zrcni/distributed-saga-board-api @zrcni/distributed-saga-board-express
 ```
 
 And imports will work directly:
 
 ```typescript
-import { createSagaBoard } from '@saga-board/api';  // Just works!
+import { createSagaBoard } from '@zrcni/distributed-saga-board-api';  // Just works!
 ```
 
 ## 📖 For Users

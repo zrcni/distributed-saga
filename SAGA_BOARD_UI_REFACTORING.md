@@ -23,7 +23,7 @@ Successfully refactored the saga-board UI from inline HTML/JavaScript strings to
 
 ## New Package Structure
 
-### @saga-board/ui
+### @zrcni/distributed-saga-board-ui
 A standalone React TypeScript application:
 
 ```
@@ -61,7 +61,7 @@ dist/
 │   └── css/index-[hash].css          # Bundled & minified CSS (~1KB gzip)
 ```
 
-### @saga-board/express (Updated)
+### @zrcni/distributed-saga-board-express (Updated)
 Server adapter now:
 - ✅ Serves built React app using EJS templates
 - ✅ Injects server configuration into HTML
@@ -73,7 +73,7 @@ Server adapter now:
 ```typescript
 // NEW: Properly serve React build
 private serveUI(req: Request, res: Response): void {
-  // 1. Read EJS template from @saga-board/ui
+  // 1. Read EJS template from @zrcni/distributed-saga-board-ui
   const template = fs.readFileSync(ejsTemplatePath, 'utf-8');
   
   // 2. Render with server config
@@ -104,7 +104,7 @@ npm run build        # Creates optimized build in dist/
 
 1. **User hits** `http://localhost:3000/admin/sagas`
 2. **Express routes to** `ExpressAdapter.serveUI()`
-3. **Server reads** `@saga-board/ui/index.ejs`
+3. **Server reads** `@zrcni/distributed-saga-board-ui/index.ejs`
 4. **EJS renders** template with:
    - `basePath`: `/admin/sagas`
    - `title`: Dashboard title
@@ -124,14 +124,14 @@ npm run build        # Creates optimized build in dist/
 
 ### Dependencies Added
 
-**@saga-board/ui:**
+**@zrcni/distributed-saga-board-ui:**
 - `react` ^18.2.0
 - `react-dom` ^18.2.0
 - `react-router-dom` ^6.20.0
 - `vite` ^5.0.0
 - `@vitejs/plugin-react` ^4.2.0
 
-**@saga-board/express:**
+**@zrcni/distributed-saga-board-express:**
 - `ejs` ^3.1.9
 - `@types/ejs` ^3.1.0
 

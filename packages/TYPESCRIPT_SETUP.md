@@ -1,14 +1,14 @@
 # TypeScript Configuration Guide for Saga Board
 
-This guide explains how to properly configure TypeScript to resolve the `@saga-board/*` packages.
+This guide explains how to properly configure TypeScript to resolve the `@zrcni/distributed-saga-board-*` packages.
 
 ## 🎯 Problem
 
 When using the saga-board packages in development (before they're published to npm), TypeScript cannot resolve module imports like:
 
 ```typescript
-import { createSagaBoard, SagaAdapter } from '@saga-board/api';
-import { ExpressAdapter } from '@saga-board/express';
+import { createSagaBoard, SagaAdapter } from '@zrcni/distributed-saga-board-api';
+import { ExpressAdapter } from '@zrcni/distributed-saga-board-express';
 ```
 
 ## ✅ Solution
@@ -24,8 +24,8 @@ In your `tsconfig.json`:
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["./node_modules/@saga-board/api/src"],
-      "@saga-board/express": ["./node_modules/@saga-board/express/src"]
+      "@zrcni/distributed-saga-board-api": ["./node_modules/@zrcni/distributed-saga-board-api/src"],
+      "@zrcni/distributed-saga-board-express": ["./node_modules/@zrcni/distributed-saga-board-express/src"]
     }
   }
 }
@@ -38,8 +38,8 @@ If using `file:` dependencies during development:
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../../packages/api/src"],
-      "@saga-board/express": ["../../packages/express/src"]
+      "@zrcni/distributed-saga-board-api": ["../../packages/api/src"],
+      "@zrcni/distributed-saga-board-express": ["../../packages/express/src"]
     }
   }
 }
@@ -86,8 +86,8 @@ Then use the `-r` flag:
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../api/src"],
-      "@saga-board/ui": ["../ui/src"]
+      "@zrcni/distributed-saga-board-api": ["../api/src"],
+      "@zrcni/distributed-saga-board-ui": ["../ui/src"]
     }
   }
 }
@@ -148,7 +148,7 @@ See the complete working example in:
 
 ## 🐛 Troubleshooting
 
-### Error: Cannot find module '@saga-board/api'
+### Error: Cannot find module '@zrcni/distributed-saga-board-api'
 
 **Solution**: Add path mapping to your `tsconfig.json` and ensure `tsconfig-paths` is registered for ts-node.
 

@@ -1,6 +1,6 @@
 import express from "express"
-import { createSagaBoard, SagaAdapter } from "@saga-board/api"
-import { ExpressAdapter } from "@saga-board/express"
+import { createSagaBoard, SagaAdapter } from "@zrcni/distributed-saga-board-api"
+import { ExpressAdapter } from "@zrcni/distributed-saga-board-express"
 import { SagaBuilder, InMemorySagaLog, Saga } from "@zrcni/distributed-saga"
 
 const app = express()

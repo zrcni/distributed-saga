@@ -1,5 +1,5 @@
 import { Router, Request, Response, static as expressStatic } from 'express';
-import { IServerAdapter, ISagaAdapter, SagaBoardOptions, SagaBoardRequest } from '@saga-board/api';
+import { IServerAdapter, ISagaAdapter, SagaBoardOptions, SagaBoardRequest } from '@zrcni/distributed-saga-board-api';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as ejs from 'ejs';
@@ -15,7 +15,7 @@ export class ExpressAdapter implements IServerAdapter {
     this.router = Router();
     // Find the UI dist path
     try {
-      this.uiDistPath = path.join(require.resolve('@saga-board/ui/package.json'), '../dist');
+      this.uiDistPath = path.join(require.resolve('@zrcni/distributed-saga-board-ui/package.json'), '../dist');
     } catch (e) {
       // Fallback for development
       this.uiDistPath = path.join(__dirname, '../../ui/dist');
@@ -206,7 +206,7 @@ export class ExpressAdapter implements IServerAdapter {
 
   private serveUI(req: Request, res: Response): void {
     try {
-      const ejsTemplatePath = path.join(require.resolve('@saga-board/ui/package.json'), '../index.ejs');
+      const ejsTemplatePath = path.join(require.resolve('@zrcni/distributed-saga-board-ui/package.json'), '../index.ejs');
       const indexHtmlPath = path.join(this.uiDistPath, 'index.html');
 
       let htmlContent: string;
@@ -260,13 +260,13 @@ export class ExpressAdapter implements IServerAdapter {
         htmlContent = htmlContent.replace(/src="\.\/static\//g, `src="${this.basePath}/static/`);
         htmlContent = htmlContent.replace(/href="\.\/static\//g, `href="${this.basePath}/static/`);
       } else {
-        throw new Error('UI files not found. Please build the @saga-board/ui package.');
+        throw new Error('UI files not found. Please build the @zrcni/distributed-saga-board-ui package.');
       }
 
       res.send(htmlContent);
     } catch (error) {
       console.error('Error serving UI:', error);
-      res.status(500).send('Error loading dashboard UI. Please ensure @saga-board/ui is built.');
+      res.status(500).send('Error loading dashboard UI. Please ensure @zrcni/distributed-saga-board-ui is built.');
     }
   }
 }

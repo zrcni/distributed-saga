@@ -1,3 +1,7 @@
+# TODO
+
+- add data to saga? I mean while it is being processed. Any data.
+
 # Distributed Sagas
 
 A TypeScript library for distributed saga orchestration.
@@ -77,8 +81,8 @@ This library now includes **Saga Board** - a lightweight, pluggable dashboard fo
 
 ```typescript
 import express from 'express';
-import { createSagaBoard, SagaAdapter } from '@saga-board/api';
-import { ExpressAdapter } from '@saga-board/express';
+import { createSagaBoard, SagaAdapter } from '@zrcni/distributed-saga-board-api';
+import { ExpressAdapter } from '@zrcni/distributed-saga-board-express';
 
 const app = express();
 const coordinator = InMemorySagaLog.createInMemorySagaCoordinator();

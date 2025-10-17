@@ -13,14 +13,14 @@ packages/
 
 ## How It Works
 
-### 1. API Package (@saga-board/api)
+### 1. API Package (@zrcni/distributed-saga-board-api)
 
 Defines the core interfaces:
 - `ISagaAdapter` - Wraps your saga coordinator
 - `IServerAdapter` - Interface for server implementations (Express, Fastify, etc.)
 - `SagaBoard` - Main orchestrator that connects adapters
 
-### 2. UI Package (@saga-board/ui)
+### 2. UI Package (@zrcni/distributed-saga-board-ui)
 
 A standalone React TypeScript application:
 - Built with Vite for optimal performance
@@ -40,7 +40,7 @@ dist/
 index.ejs               # EJS template (package root)
 ```
 
-### 3. Express Package (@saga-board/express)
+### 3. Express Package (@zrcni/distributed-saga-board-express)
 
 Server adapter that:
 1. **Serves the UI**: Renders `index.ejs` with server configuration
@@ -56,7 +56,7 @@ Express Router (basePath: /admin/sagas)
     ↓
     ├─→ /                    → serveUI() → index.ejs + config
     ├─→ /sources/:name       → serveUI() → (React handles routing)
-    ├─→ /static/*            → Static files from @saga-board/ui/dist
+    ├─→ /static/*            → Static files from @zrcni/distributed-saga-board-ui/dist
     └─→ /api/*               → REST API endpoints
 ```
 
@@ -135,7 +135,7 @@ Once loaded, React Router handles all navigation:
 To create an adapter for another framework (e.g., Fastify):
 
 ```typescript
-import { IServerAdapter, ISagaAdapter, SagaBoardOptions } from '@saga-board/api';
+import { IServerAdapter, ISagaAdapter, SagaBoardOptions } from '@zrcni/distributed-saga-board-api';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as ejs from 'ejs';
@@ -145,29 +145,9 @@ export class FastifyAdapter implements IServerAdapter {
   
   constructor() {
     this.uiDistPath = path.join(
-      require.resolve('@saga-board/ui/package.json'),
+      require.resolve('@zrcni/distributed-saga-board-ui/package.json'),
       '../dist'
     );
-  }
-  
-  setupRoutes(adapters: ISagaAdapter[], options?: SagaBoardOptions): void {
-    // 1. Serve static assets
-    fastify.register(fastifyStatic, {
-      root: path.join(this.uiDistPath, 'static'),
-      prefix: `${this.basePath}/static/`
-    });
-    
-    // 2. API routes
-    fastify.get('/api/sources', async () => { /* ... */ });
-    
-    // 3. Serve UI with EJS
-    fastify.get('*', async (req, reply) => {
-      const template = fs.readFileSync('index.ejs', 'utf-8');
-      const html = ejs.render(template, { basePath, uiConfig });
-      reply.type('text/html').send(html);
-    });
-  }
-}
 ```
 
 ## Configuration Flow

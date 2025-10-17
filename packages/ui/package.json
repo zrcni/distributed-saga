@@ -1,5 +1,5 @@
 {
-  "name": "@saga-board/ui",
+  "name": "@zrcni/distributed-saga-board-ui",
   "version": "0.0.1",
   "description": "Saga Board UI - React TypeScript frontend for Saga Dashboard",
   "main": "./dist/index.html",

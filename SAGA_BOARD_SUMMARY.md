@@ -44,7 +44,7 @@ examples/
 
 ## 🎯 Key Features Implemented
 
-### 1. Core API (@saga-board/api)
+### 1. Core API (@zrcni/distributed-saga-board-api)
 
 ✅ **SagaAdapter**
 - Wraps SagaCoordinator for dashboard access
@@ -64,7 +64,7 @@ examples/
 - Framework-agnostic interfaces
 - Proper typing for saga info and task status
 
-### 2. Express Adapter (@saga-board/express)
+### 2. Express Adapter (@zrcni/distributed-saga-board-express)
 
 ✅ **ExpressAdapter**
 - Clean Express.js integration
@@ -186,11 +186,11 @@ examples/
 
 ```bash
 # Install the packages
-npm install @saga-board/api @saga-board/express
+npm install @zrcni/distributed-saga-board-api @zrcni/distributed-saga-board-express
 
 # Use in your application
-import { createSagaBoard, SagaAdapter } from '@saga-board/api';
-import { ExpressAdapter } from '@saga-board/express';
+import { createSagaBoard, SagaAdapter } from '@zrcni/distributed-saga-board-api';
+import { ExpressAdapter } from '@zrcni/distributed-saga-board-express';
 ```
 
 ### For Development

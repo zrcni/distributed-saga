@@ -17,9 +17,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../api/src"],
-      "@saga-board/express": ["../express/src"],
-      "@saga-board/ui": ["./src"]
+      "@zrcni/distributed-saga-board-api": ["../api/src"],
+      "@zrcni/distributed-saga-board-express": ["../express/src"],
+      "@zrcni/distributed-saga-board-ui": ["./src"]
     }
   },
   "include": ["src"],

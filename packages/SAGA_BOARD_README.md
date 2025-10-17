@@ -26,9 +26,9 @@ Saga Board is split into multiple packages following a modular architecture:
 
 | Package | Description | Version |
 |---------|-------------|---------|
-| `@saga-board/api` | Core API and adapter interfaces | `0.0.1` |
-| `@saga-board/express` | Express.js server adapter | `0.0.1` |
-| `@saga-board/ui` | Static UI assets | `0.0.1` |
+| `@zrcni/distributed-saga-board-api` | Core API and adapter interfaces | `0.0.1` |
+| `@zrcni/distributed-saga-board-express` | Express.js server adapter | `0.0.1` |
+| `@zrcni/distributed-saga-board-ui` | Static UI assets | `0.0.1` |
 
 ## 🚀 Quick Start
 
@@ -36,18 +36,18 @@ Saga Board is split into multiple packages following a modular architecture:
 
 ```bash
 # Install the core API and your preferred server adapter
-npm install @saga-board/api @saga-board/express
+npm install @zrcni/distributed-saga-board-api @zrcni/distributed-saga-board-express
 
 # Or with yarn
-yarn add @saga-board/api @saga-board/express
+yarn add @zrcni/distributed-saga-board-api @zrcni/distributed-saga-board-express
 ```
 
 ### Basic Usage with Express
 
 ```typescript
 import express from 'express';
-import { createSagaBoard, SagaAdapter } from '@saga-board/api';
-import { ExpressAdapter } from '@saga-board/express';
+import { createSagaBoard, SagaAdapter } from '@zrcni/distributed-saga-board-api';
+import { ExpressAdapter } from '@zrcni/distributed-saga-board-express';
 import { InMemorySagaLog } from '@zrcni/distributed-saga';
 
 const app = express();
@@ -101,8 +101,8 @@ If you're using TypeScript with `ts-node` during development, you may need to co
      "compilerOptions": {
        "baseUrl": ".",
        "paths": {
-         "@saga-board/api": ["./node_modules/@saga-board/api/src"],
-         "@saga-board/express": ["./node_modules/@saga-board/express/src"]
+         "@zrcni/distributed-saga-board-api": ["./node_modules/@zrcni/distributed-saga-board-api/src"],
+         "@zrcni/distributed-saga-board-express": ["./node_modules/@zrcni/distributed-saga-board-express/src"]
        }
      }
    }

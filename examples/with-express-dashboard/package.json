@@ -9,8 +9,8 @@
     "dev": "ts-node-dev -r tsconfig-paths/register index.ts"
   },
   "dependencies": {
-    "@saga-board/api": "file:../../packages/api",
-    "@saga-board/express": "file:../../packages/express",
+    "@zrcni/distributed-saga-board-api": "file:../../packages/api",
+    "@zrcni/distributed-saga-board-express": "file:../../packages/express",
     "@zrcni/distributed-saga": "file:../..",
     "express": "^4.18.0"
   },

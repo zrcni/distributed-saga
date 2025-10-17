@@ -12,9 +12,9 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@saga-board/api": ["../../packages/api/src"],
-      "@saga-board/express": ["../../packages/express/src"],
-      "@saga-board/ui": ["../../packages/ui/src"]
+      "@zrcni/distributed-saga-board-api": ["../../packages/api/src"],
+      "@zrcni/distributed-saga-board-express": ["../../packages/express/src"],
+      "@zrcni/distributed-saga-board-ui": ["../../packages/ui/src"]
     }
   },
   "include": ["**/*.ts"],
