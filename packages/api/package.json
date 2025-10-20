@@ -2,10 +2,25 @@
   "name": "@zrcni/distributed-saga-board-api",
   "version": "0.0.1",
   "description": "Saga Board API - Core API for monitoring distributed sagas",
+  "author": "zrcni",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zrcni/distributed-saga.git",
+    "directory": "packages/api"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
+    "prepublishOnly": "npm run clean && npm run build",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"

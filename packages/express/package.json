@@ -2,10 +2,25 @@
   "name": "@zrcni/distributed-saga-board-express",
   "version": "0.0.1",
   "description": "Saga Board Express Adapter - Express.js adapter for Saga Dashboard",
+  "author": "zrcni",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zrcni/distributed-saga.git",
+    "directory": "packages/express"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
+    "prepublishOnly": "npm run clean && npm run build",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
@@ -18,8 +33,8 @@
     "express"
   ],
   "dependencies": {
-    "@zrcni/distributed-saga-board-api": "file:../api",
-    "@zrcni/distributed-saga-board-ui": "file:../ui",
+    "@zrcni/distributed-saga-board-api": "^0.0.1",
+    "@zrcni/distributed-saga-board-ui": "^0.0.1",
     "ejs": "^3.1.9"
   },
   "peerDependencies": {
