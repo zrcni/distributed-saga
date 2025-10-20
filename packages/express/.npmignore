@@ -5,6 +5,10 @@ src/
 
 # Development files
 tsconfig.json
+tsconfig.cjs.json
+tsconfig.esm.json
+.swcrc
+.swcrc.esm
 .npmrc
 
 # Build artifacts

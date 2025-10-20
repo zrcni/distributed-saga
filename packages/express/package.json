@@ -1,6 +1,6 @@
 {
   "name": "@zrcni/distributed-saga-board-express",
-  "version": "0.0.4-alpha.1",
+  "version": "0.0.4-alpha.3",
   "description": "Saga Board Express Adapter - Express.js adapter for Saga Dashboard",
   "author": "zrcni",
   "license": "MIT",
@@ -14,17 +14,28 @@
     "tag": "alpha",
     "access": "public"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/cjs/index.js"
+    }
+  },
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
     "prepublishOnly": "npm run clean && npm run build",
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "build": "npm run build:cjs && npm run build:esm",
+    "build:cjs": "swc src -d dist/cjs --config-file .swcrc --copy-files && tsc --project tsconfig.cjs.json",
+    "build:esm": "swc src -d dist/esm --config-file .swcrc.esm --copy-files && tsc --project tsconfig.esm.json",
+    "dev": "tsc --watch"
   },
   "keywords": [
     "saga",
@@ -34,7 +45,7 @@
     "express"
   ],
   "dependencies": {
-    "@zrcni/distributed-saga-board-api": "^0.0.4-alpha.1",
+    "@zrcni/distributed-saga-board-api": "^0.0.4-alpha.3",
     "@zrcni/distributed-saga-board-ui": "^0.0.4-alpha.1",
     "ejs": "^3.1.9"
   },
@@ -42,9 +53,12 @@
     "express": "^4.0.0"
   },
   "devDependencies": {
+    "@swc/cli": "^0.1.65",
+    "@swc/core": "^1.13.5",
     "@types/ejs": "^3.1.0",
     "@types/express": "^4.17.0",
     "@types/node": "^20.0.0",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.0.0"
   }
 }

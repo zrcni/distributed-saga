@@ -18,6 +18,7 @@ All three packages are now configured for publishing with:
 - ✅ `prepublishOnly` script to build before publishing
 - ✅ `.npmignore` to exclude source files and dev artifacts
 - ✅ README files with documentation
+- ✅ **Dual module support**: Both CommonJS and ESM builds (API and Express packages)
 
 ## Publishing Steps
 
@@ -86,8 +87,11 @@ npm publish
 Each package includes only necessary files:
 
 ### API Package
-- `dist/` - Compiled JavaScript and TypeScript declarations
+- `dist/cjs/` - CommonJS build with JavaScript and TypeScript declarations
+- `dist/esm/` - ES Module build with JavaScript and TypeScript declarations
 - `README.md` - Package documentation
+
+**Module Support:** Both `require()` (CommonJS) and `import` (ESM) syntax
 
 ### UI Package
 - `dist/` - Compiled React application (HTML, JS, CSS)
@@ -95,12 +99,16 @@ Each package includes only necessary files:
 - `README.md` - Package documentation
 
 ### Express Package
-- `dist/` - Compiled JavaScript and TypeScript declarations
+- `dist/cjs/` - CommonJS build with JavaScript and TypeScript declarations
+- `dist/esm/` - ES Module build with JavaScript and TypeScript declarations
 - `README.md` - Package documentation
+
+**Module Support:** Both `require()` (CommonJS) and `import` (ESM) syntax
 
 Excluded from all published packages:
 - `src/` - Source TypeScript/React files
 - `tsconfig.json` - TypeScript configuration
+- `.swcrc`, `.swcrc.esm` - SWC build configurations
 - `.npmrc` - NPM configuration with auth token
 - `node_modules/` - Dependencies
 - Development and test files
