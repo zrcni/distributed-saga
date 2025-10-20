@@ -10,12 +10,20 @@ export class SagaCoordinator {
     this.log = log
   }
 
-  async createSaga<D = unknown>(sagaId: string, job: D) {
-    return Saga.create<D>(sagaId, job, this.log)
+  async createSaga<D = unknown>(sagaId: string, job: D, parentSagaId?: string | null) {
+    return Saga.create<D>(sagaId, job, this.log, parentSagaId ?? null)
+  }
+
+  async createChildSaga<D = unknown>(parentSagaId: string, parentTaskId: string, sagaId: string, job: D) {
+    return Saga.create<D>(sagaId, job, this.log, parentSagaId, parentTaskId)
   }
 
   getActiveSagaIds() {
     return this.log.getActiveSagaIds()
+  }
+
+  getChildSagaIds(parentSagaId: string) {
+    return this.log.getChildSagaIds(parentSagaId)
   }
 
   async recoverSagaState<D = unknown>(

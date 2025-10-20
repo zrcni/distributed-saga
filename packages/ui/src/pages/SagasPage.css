@@ -16,6 +16,58 @@
   color: white;
 }
 
+/* Header with toggle */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.header-row h2 {
+  margin: 0;
+}
+
+.view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.toggle-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.saga-count {
+  font-size: 13px;
+  color: #6c757d;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  white-space: nowrap;
+}
+
 .sagas-list {
   display: flex;
   flex-direction: column;
@@ -27,6 +79,30 @@
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+/* Highlight root sagas with a subtle border and background */
+.saga-card.root-saga {
+  border: 2px solid var(--primary-color);
+  border-left: 6px solid var(--primary-color);
+  background: linear-gradient(to right, rgba(13, 110, 253, 0.02), var(--card-bg));
+}
+
+/* Highlight animation for parent saga when clicked */
+.saga-card.highlight-parent {
+  animation: highlight-pulse 2s ease;
+}
+
+@keyframes highlight-pulse {
+  0%, 100% {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(13, 110, 253, 0.5), 0 4px 8px rgba(0,0,0,0.2);
+    transform: scale(1.01);
+  }
 }
 
 .saga-header {
@@ -49,6 +125,54 @@
   color: #6c757d;
   margin-bottom: 4px;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.root-saga-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(13, 110, 253, 0.3);
+}
+
+.parent-saga-link {
+  margin-top: 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.parent-saga-label {
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.parent-saga-id {
+  font-family: 'Courier New', monospace;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  background: rgba(13, 110, 253, 0.05);
+}
+
+.parent-saga-id:hover {
+  background: rgba(13, 110, 253, 0.1);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .saga-id {
@@ -264,6 +388,384 @@
 }
 
 .btn-abort {
+  background: var(--danger-color);
+  color: white;
+}
+
+/* Child Sagas Styles */
+.child-sagas {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e9ecef;
+}
+
+.child-sagas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.child-sagas-header strong {
+  font-size: 14px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.child-sagas-summary {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.child-sagas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.child-saga {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.child-saga:hover {
+  background: #e9ecef;
+}
+
+.child-saga-completed {
+  border-left-color: var(--success-color);
+  background: #f0f8f0;
+}
+
+.child-saga-active {
+  border-left-color: var(--primary-color);
+  background: #f0f5ff;
+}
+
+.child-saga-aborted {
+  border-left-color: var(--danger-color);
+  background: #fff5f5;
+}
+
+.child-saga-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: #dee2e6;
+  color: #495057;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.child-saga-completed .child-saga-number {
+  background: var(--success-color);
+  color: white;
+}
+
+.child-saga-active .child-saga-number {
+  background: var(--primary-color);
+  color: white;
+}
+
+.child-saga-aborted .child-saga-number {
+  background: var(--danger-color);
+  color: white;
+}
+
+.child-saga-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.child-saga-id {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #212529;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.child-saga-parent-task {
+  font-size: 11px;
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: 1px solid #dee2e6;
+}
+
+.child-saga-tasks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.child-task-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.child-task-not_started {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+.child-task-started {
+  background: var(--warning-color);
+  color: white;
+}
+
+.child-task-completed {
+  background: var(--success-color);
+  color: white;
+}
+
+.child-task-compensating {
+  background: #e67e22;
+  color: white;
+}
+
+.child-task-compensated {
+  background: #95a5a6;
+  color: white;
+}
+
+.child-saga-status {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.child-saga-status.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.child-saga-status.completed {
+  background: var(--success-color);
+  color: white;
+}
+
+.child-saga-status.aborted {
+  background: var(--danger-color);
+  color: white;
+}
+
+/* Task with expandable child sagas */
+.task-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-has-children {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.task-has-children:hover {
+  background-color: #f8f9fa;
+}
+
+.task-expand-icon {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 10px;
+  color: #6c757d;
+  transition: transform 0.2s ease;
+}
+
+.task-children-badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  background: #e7f3ff;
+  color: #0066cc;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #b3d9ff;
+}
+
+/* Child sagas nested under task */
+.task-child-sagas {
+  margin-left: 40px;
+  margin-top: 8px;
+  padding-left: 20px;
+  border-left: 3px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.task-child-saga {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border-left: 4px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.task-child-saga:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateX(2px);
+}
+
+.task-child-saga-completed {
+  border-left-color: var(--success-color);
+  background: #f8fff9;
+}
+
+.task-child-saga-active {
+  border-left-color: var(--primary-color);
+  background: #f0f7ff;
+}
+
+.task-child-saga-aborted {
+  border-left-color: var(--danger-color);
+  background: #fff5f5;
+}
+
+.task-child-number {
+  background: #6c757d;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.task-child-saga-completed .task-child-number {
+  background: var(--success-color);
+}
+
+.task-child-saga-active .task-child-number {
+  background: var(--primary-color);
+}
+
+.task-child-saga-aborted .task-child-number {
+  background: var(--danger-color);
+}
+
+.task-child-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-child-id {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #212529;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.task-child-tasks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.task-child-task-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.task-child-task-not_started {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+.task-child-task-started {
+  background: var(--warning-color);
+  color: white;
+}
+
+.task-child-task-completed {
+  background: var(--success-color);
+  color: white;
+}
+
+.task-child-task-compensating {
+  background: #e67e22;
+  color: white;
+}
+
+.task-child-task-compensated {
+  background: #95a5a6;
+  color: white;
+}
+
+.task-child-status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.task-child-status.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.task-child-status.completed {
+  background: var(--success-color);
+  color: white;
+}
+
+.task-child-status.aborted {
   background: var(--danger-color);
   color: white;
 }

@@ -116,15 +116,51 @@ export class SagaAdapter implements ISagaAdapter {
 
       const status: 'active' | 'completed' | 'aborted' = sagaCompleted ? 'completed' : sagaAborted ? 'aborted' : 'active';
 
+      // Get parent saga ID and parent task ID from the first message
+      const parentSagaId = messages[0].parentSagaId ?? null;
+      const parentTaskId = messages[0].parentTaskId ?? null;
+
+      // Fetch child sagas
+      const childSagaIds = await this.getChildSagaIds(sagaId);
+      const childSagas: SagaInfo[] = [];
+      
+      for (const childId of childSagaIds) {
+        const childInfo = await this.getSagaInfo(childId);
+        if (childInfo) {
+          childSagas.push(childInfo);
+        }
+      }
+
+      // Group child sagas by their parent task ID
+      const taskArray = Array.from(tasks.values());
+      for (const task of taskArray) {
+        task.childSagas = childSagas.filter(child => child.parentTaskId === task.taskName);
+      }
+
       return {
         sagaId,
         status,
         job,
-        tasks: Array.from(tasks.values()),
+        tasks: taskArray,
+        parentSagaId,
+        parentTaskId,
+        childSagas,  // Keep this for backward compatibility
       };
     } catch (error) {
       console.error('Error getting saga info:', error);
       return null;
+    }
+  }
+
+  private async getChildSagaIds(parentSagaId: string): Promise<string[]> {
+    try {
+      const result = await this.coordinator.getChildSagaIds(parentSagaId);
+      if (result.isError()) {
+        return [];
+      }
+      return result.data;
+    } catch (error) {
+      return [];
     }
   }
 

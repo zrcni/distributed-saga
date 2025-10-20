@@ -5,6 +5,9 @@ export interface SagaInfo {
   updatedAt?: Date;
   job?: any;
   tasks: TaskInfo[];
+  parentSagaId?: string | null;
+  parentTaskId?: string | null;
+  childSagas?: SagaInfo[];
 }
 
 export interface TaskInfo {
@@ -14,6 +17,7 @@ export interface TaskInfo {
   completedAt?: Date;
   data?: any;
   error?: any;
+  childSagas?: SagaInfo[];  // Child sagas created by this task
 }
 
 export interface SagaBoardOptions {

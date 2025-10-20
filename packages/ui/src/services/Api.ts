@@ -4,7 +4,11 @@ export interface SagaInfo {
   tasks?: Array<{
     taskName: string;
     status: string;
+    childSagas?: SagaInfo[];  // Child sagas created by this task
   }>;
+  parentSagaId?: string | null;
+  parentTaskId?: string | null;
+  childSagas?: SagaInfo[];
 }
 
 export interface Source {

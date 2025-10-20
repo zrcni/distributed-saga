@@ -165,11 +165,13 @@ export class Saga<StartPayload = unknown> {
   static async create<D>(
     sagaId: string,
     job: D,
-    log: SagaLog
+    log: SagaLog,
+    parentSagaId: string | null = null,
+    parentTaskId: string | null = null
   ): Promise<ResultOk<Saga<D>> | ResultError> {
-    const sagaState = SagaState.create<D>(sagaId, job)
+    const sagaState = SagaState.create<D>(sagaId, job, parentSagaId, parentTaskId)
 
-    const result = await log.startSaga<D>(sagaId, job)
+    const result = await log.startSaga<D>(sagaId, job, parentSagaId, parentTaskId)
     if (result.isError()) {
       return result
     }

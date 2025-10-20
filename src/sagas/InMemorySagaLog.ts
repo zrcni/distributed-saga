@@ -8,13 +8,17 @@ interface InMemorySagaData {
   messages: SagaMessage[]
   createdAt: Date
   updatedAt: Date
+  parentSagaId: string | null
+  parentTaskId: string | null
 }
 
 export class InMemorySagaLog implements SagaLog {
   private sagas: Record<string, InMemorySagaData>
+  private childSagaIndex: Record<string, Set<string>> // parentSagaId -> Set of child saga IDs
 
   constructor() {
     this.sagas = {}
+    this.childSagaIndex = {}
   }
 
   async getMessages(
@@ -38,9 +42,19 @@ export class InMemorySagaLog implements SagaLog {
     return Result.ok(sagaIds)
   }
 
+  async getChildSagaIds(parentSagaId: string): Promise<ResultOk<string[]>> {
+    const childIds = this.childSagaIndex[parentSagaId]
+    if (!childIds) {
+      return Result.ok([])
+    }
+    return Result.ok(Array.from(childIds))
+  }
+
   async startSaga<D>(
     sagaId: string,
-    job: D
+    job: D,
+    parentSagaId: string | null = null,
+    parentTaskId: string | null = null
   ): Promise<ResultOk | ResultError<SagaAlreadyRunningError>> {
     const sagaData = this.sagas[sagaId]
     if (sagaData) {
@@ -49,13 +63,23 @@ export class InMemorySagaLog implements SagaLog {
       )
     }
 
-    const msg = SagaMessage.createStartSagaMessage(sagaId, job)
+    const msg = SagaMessage.createStartSagaMessage(sagaId, job, parentSagaId, parentTaskId)
 
     const now = new Date()
     this.sagas[sagaId] = {
       messages: [msg],
       createdAt: now,
       updatedAt: now,
+      parentSagaId,
+      parentTaskId,
+    }
+
+    // Update the child saga index if this has a parent
+    if (parentSagaId) {
+      if (!this.childSagaIndex[parentSagaId]) {
+        this.childSagaIndex[parentSagaId] = new Set()
+      }
+      this.childSagaIndex[parentSagaId].add(sagaId)
     }
 
     return Result.ok()
@@ -85,11 +109,28 @@ export class InMemorySagaLog implements SagaLog {
    * Delete a saga from memory
    */
   deleteSaga(sagaId: string): ResultOk | ResultError {
-    if (this.sagas[sagaId]) {
-      delete this.sagas[sagaId]
-      return Result.ok()
+    const sagaData = this.sagas[sagaId]
+    if (!sagaData) {
+      return Result.error(new SagaNotRunningError("saga not found", { sagaId }))
     }
-    return Result.error(new SagaNotRunningError("saga not found", { sagaId }))
+
+    // Remove from parent's child index if it has a parent
+    if (sagaData.parentSagaId) {
+      const parentChildSet = this.childSagaIndex[sagaData.parentSagaId]
+      if (parentChildSet) {
+        parentChildSet.delete(sagaId)
+        // Clean up empty sets
+        if (parentChildSet.size === 0) {
+          delete this.childSagaIndex[sagaData.parentSagaId]
+        }
+      }
+    }
+
+    // Remove any child index entries for this saga
+    delete this.childSagaIndex[sagaId]
+
+    delete this.sagas[sagaId]
+    return Result.ok()
   }
 
   /**

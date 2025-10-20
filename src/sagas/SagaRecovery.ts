@@ -32,7 +32,7 @@ export class SagaRecovery {
       )
     }
 
-    const state = SagaState.create(sagaId, startMsg.data)
+    const state = SagaState.create(sagaId, startMsg.data, startMsg.parentSagaId ?? null, startMsg.parentTaskId ?? null)
 
     for (const msg of messages) {
       if (msg.msgType === SagaMessageType.StartSaga) {

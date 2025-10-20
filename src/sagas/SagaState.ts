@@ -24,8 +24,10 @@ export class SagaState<D = unknown> {
   sagaCompleted: boolean
   createdAt: Date
   updatedAt: Date
+  parentSagaId: string | null
+  parentTaskId: string | null
 
-  constructor(sagaId: string, job: D) {
+  constructor(sagaId: string, job: D, parentSagaId: string | null = null, parentTaskId: string | null = null) {
     this.sagaId = sagaId
     this.job = job
     this.taskData = {}
@@ -34,6 +36,8 @@ export class SagaState<D = unknown> {
     this.sagaCompleted = false
     this.createdAt = new Date()
     this.updatedAt = new Date()
+    this.parentSagaId = parentSagaId
+    this.parentTaskId = parentTaskId
   }
 
   getTaskIds() {
@@ -125,7 +129,7 @@ export class SagaState<D = unknown> {
     return this.sagaCompleted
   }
 
-  static create<D>(sagaId: string, job: D): SagaState<D> {
-    return new SagaState(sagaId, job)
+  static create<D>(sagaId: string, job: D, parentSagaId: string | null = null, parentTaskId: string | null = null): SagaState<D> {
+    return new SagaState(sagaId, job, parentSagaId, parentTaskId)
   }
 }

@@ -11,6 +11,8 @@ interface SagaDocument {
   messages: SagaMessage[]
   createdAt: Date
   updatedAt: Date
+  parentSagaId: string | null
+  parentTaskId: string | null
 }
 
 export class MongoDBSagaLog implements SagaLog {
@@ -59,9 +61,24 @@ export class MongoDBSagaLog implements SagaLog {
     }
   }
 
+  async getChildSagaIds(parentSagaId: string): Promise<ResultOk<string[]>> {
+    try {
+      const docs = await this.collection
+        .find({ parentSagaId })
+        .project<Pick<SagaDocument, "sagaId">>({ sagaId: 1 })
+        .toArray()
+      const childIds = docs.map((doc) => doc.sagaId)
+      return Result.ok(childIds)
+    } catch (error) {
+      return Result.ok([])
+    }
+  }
+
   async startSaga<D>(
     sagaId: string,
-    job: D
+    job: D,
+    parentSagaId: string | null = null,
+    parentTaskId: string | null = null
   ): Promise<ResultOk | ResultError<SagaAlreadyRunningError>> {
     try {
       const existingDoc = await this.collection.findOne({ sagaId })
@@ -74,7 +91,7 @@ export class MongoDBSagaLog implements SagaLog {
         )
       }
 
-      const msg = SagaMessage.createStartSagaMessage(sagaId, job)
+      const msg = SagaMessage.createStartSagaMessage(sagaId, job, parentSagaId, parentTaskId)
 
       const now = new Date()
       await this.collection.insertOne({
@@ -83,6 +100,8 @@ export class MongoDBSagaLog implements SagaLog {
         messages: [msg],
         createdAt: now,
         updatedAt: now,
+        parentSagaId,
+        parentTaskId,
       })
 
       return Result.ok()
@@ -136,6 +155,8 @@ export class MongoDBSagaLog implements SagaLog {
 
   static async createIndexes(collection: Collection<SagaDocument>) {
     await collection.createIndex({ sagaId: 1 }, { unique: true })
+    await collection.createIndex({ parentSagaId: 1 })
+    await collection.createIndex({ updatedAt: 1 })
   }
 
   /**
