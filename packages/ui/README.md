@@ -2,6 +2,14 @@
 
 React TypeScript UI for Saga Board Dashboard.
 
+## Installation
+
+```bash
+npm install @zrcni/distributed-saga-board-ui
+```
+
+> **Note**: This package is typically used as a dependency of `@zrcni/distributed-saga-board-express` and doesn't need to be installed separately for most use cases.
+
 ## Overview
 
 This package provides a modern, responsive React application for monitoring and managing distributed sagas. It's built with:

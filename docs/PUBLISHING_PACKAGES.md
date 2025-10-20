@@ -1,16 +1,16 @@
 # Publishing Guide for Dashboard Packages
 
-This document explains how to publish the `@zrcni/distributed-saga-board-api` and `@zrcni/distributed-saga-board-express` packages to GitHub Packages.
+This document explains how to publish the dashboard packages (`api`, `ui`, and `express`) to GitHub Packages.
 
 ## Prerequisites
 
 1. **GitHub Token**: You need a GitHub Personal Access Token with `write:packages` and `read:packages` permissions
 2. **Authentication**: The `.npmrc` file in each package already contains the auth token configuration
-3. **Build Tools**: Ensure TypeScript is installed and configured
+3. **Build Tools**: Ensure TypeScript and Vite are installed and configured
 
 ## Package Configuration
 
-Both packages are now configured for publishing with:
+All three packages are now configured for publishing with:
 
 - ✅ `publishConfig` pointing to GitHub Packages registry
 - ✅ `repository` field with proper directory path
@@ -30,6 +30,10 @@ Before publishing, update the version in `package.json`:
 cd packages/api
 npm version patch  # or minor, or major
 
+# For ui package
+cd packages/ui
+npm version patch  # or minor, or major
+
 # For express package
 cd packages/express
 npm version patch  # or minor, or major
@@ -44,6 +48,10 @@ The `prepublishOnly` script will automatically build, but you can test manually:
 cd packages/api
 npm run build
 
+# Build ui package
+cd packages/ui
+npm run build
+
 # Build express package
 cd packages/express
 npm run build
@@ -56,6 +64,10 @@ npm run build
 cd packages/api
 npm publish
 
+# Publish ui package
+cd packages/ui
+npm publish
+
 # Publish express package
 cd packages/express
 npm publish
@@ -66,16 +78,28 @@ npm publish
 ⚠️ **Important**: Publish in this order to respect dependencies:
 
 1. **First**: `@zrcni/distributed-saga-board-api` (no internal dependencies)
-2. **Second**: `@zrcni/distributed-saga-board-express` (depends on api and ui)
+2. **Second**: `@zrcni/distributed-saga-board-ui` (no internal dependencies)
+3. **Third**: `@zrcni/distributed-saga-board-express` (depends on api and ui)
 
 ## What Gets Published
 
-Each package includes only:
+Each package includes only necessary files:
+
+### API Package
 - `dist/` - Compiled JavaScript and TypeScript declarations
 - `README.md` - Package documentation
 
-Excluded from the published package:
-- `src/` - Source TypeScript files
+### UI Package
+- `dist/` - Compiled React application (HTML, JS, CSS)
+- `index.ejs` - EJS template for server-side rendering
+- `README.md` - Package documentation
+
+### Express Package
+- `dist/` - Compiled JavaScript and TypeScript declarations
+- `README.md` - Package documentation
+
+Excluded from all published packages:
+- `src/` - Source TypeScript/React files
 - `tsconfig.json` - TypeScript configuration
 - `.npmrc` - NPM configuration with auth token
 - `node_modules/` - Dependencies
@@ -87,6 +111,9 @@ Before publishing, you can preview what will be included:
 
 ```bash
 cd packages/api
+npm pack --dry-run
+
+cd packages/ui
 npm pack --dry-run
 
 cd packages/express
@@ -169,6 +196,13 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
+      - name: Publish ui package
+        run: |
+          cd packages/ui
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: Publish express package
         run: |
           cd packages/express
@@ -181,6 +215,7 @@ jobs:
 
 Current versions:
 - `@zrcni/distributed-saga-board-api`: 0.0.1
+- `@zrcni/distributed-saga-board-ui`: 0.0.1
 - `@zrcni/distributed-saga-board-express`: 0.0.1
 
 Follow semantic versioning:
@@ -195,4 +230,4 @@ The express package depends on:
 - `@zrcni/distributed-saga-board-ui`: ^0.0.1
 - `ejs`: ^3.1.9
 
-Ensure the UI package is also published before publishing the express package.
+⚠️ **Important**: Ensure both the API and UI packages are published before publishing the Express package.

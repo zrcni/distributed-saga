@@ -1,0 +1,25 @@
+# Source files
+src/
+*.ts
+*.tsx
+!*.d.ts
+
+# Development files
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+.npmrc
+index.html
+
+# Build artifacts
+node_modules/
+*.log
+*.tgz
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Static files (already in dist)
+static/
