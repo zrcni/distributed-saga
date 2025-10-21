@@ -56,6 +56,10 @@ export class ExpressAdapter implements IServerAdapter {
     this.router.get('/sources/:name', (req: Request, res: Response) => {
       this.serveUI(req, res);
     });
+
+    this.router.get('/sources/:name/sagas/:sagaId', (req: Request, res: Response) => {
+      this.serveUI(req, res);
+    });
   }
 
   private setupApiRoutes(): void {
@@ -81,6 +85,7 @@ export class ExpressAdapter implements IServerAdapter {
     this.router.get('/api/sources/:name/sagas', async (req: Request, res: Response) => {
       try {
         const { name } = req.params;
+        const { rootOnly } = req.query;
         const adapter = this.findAdapter(name);
 
         if (!adapter) {
@@ -100,7 +105,14 @@ export class ExpressAdapter implements IServerAdapter {
           })
         );
 
-        res.json(sagas.filter(Boolean));
+        let filteredSagas = sagas.filter(Boolean);
+        
+        // If rootOnly query parameter is set, filter to only root sagas
+        if (rootOnly === 'true') {
+          filteredSagas = filteredSagas.filter(saga => saga && !saga.parentSagaId);
+        }
+
+        res.json(filteredSagas);
       } catch (error) {
         console.error('Error fetching sagas:', error);
         res.status(500).json({ error: 'Failed to fetch sagas' });
@@ -111,6 +123,7 @@ export class ExpressAdapter implements IServerAdapter {
     this.router.get('/api/sources/:name/sagas/:sagaId', async (req: Request, res: Response) => {
       try {
         const { name, sagaId } = req.params;
+        const { withChildren } = req.query;
         const adapter = this.findAdapter(name);
 
         if (!adapter) {
@@ -126,6 +139,32 @@ export class ExpressAdapter implements IServerAdapter {
 
         if (!sagaInfo) {
           return res.status(404).json({ error: 'Saga not found' });
+        }
+
+        // If withChildren query parameter is set, return shallow saga info (without deep nesting)
+        if (withChildren === 'shallow') {
+          // Remove deeply nested childSagas from tasks to avoid huge payloads
+          const shallowInfo = {
+            ...sagaInfo,
+            tasks: sagaInfo.tasks?.map(task => ({
+              ...task,
+              childSagas: task.childSagas?.map(child => ({
+                sagaId: child.sagaId,
+                status: child.status,
+                parentSagaId: child.parentSagaId,
+                parentTaskId: child.parentTaskId,
+                // Omit tasks and childSagas from nested children
+              }))
+            })),
+            childSagas: sagaInfo.childSagas?.map(child => ({
+              sagaId: child.sagaId,
+              status: child.status,
+              parentSagaId: child.parentSagaId,
+              parentTaskId: child.parentTaskId,
+              // Omit tasks and childSagas from direct children
+            }))
+          };
+          return res.json(shallowInfo);
         }
 
         res.json(sagaInfo);

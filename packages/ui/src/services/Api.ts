@@ -4,6 +4,8 @@ export interface SagaInfo {
   tasks?: Array<{
     taskName: string;
     status: string;
+    data?: any;
+    error?: any;
     childSagas?: SagaInfo[];  // Child sagas created by this task
   }>;
   parentSagaId?: string | null;
@@ -53,12 +55,14 @@ export class Api {
     return this.fetch<Source[]>('/sources');
   }
 
-  async getSagas(sourceName: string): Promise<SagaInfo[]> {
-    return this.fetch<SagaInfo[]>(`/sources/${sourceName}/sagas`);
+  async getSagas(sourceName: string, rootOnly?: boolean): Promise<SagaInfo[]> {
+    const query = rootOnly ? '?rootOnly=true' : '';
+    return this.fetch<SagaInfo[]>(`/sources/${sourceName}/sagas${query}`);
   }
 
-  async getSaga(sourceName: string, sagaId: string): Promise<SagaInfo> {
-    return this.fetch<SagaInfo>(`/sources/${sourceName}/sagas/${sagaId}`);
+  async getSaga(sourceName: string, sagaId: string, withChildren?: 'shallow' | 'full'): Promise<SagaInfo> {
+    const query = withChildren ? `?withChildren=${withChildren}` : '';
+    return this.fetch<SagaInfo>(`/sources/${sourceName}/sagas/${sagaId}${query}`);
   }
 
   async abortSaga(sourceName: string, sagaId: string): Promise<{ success: boolean }> {

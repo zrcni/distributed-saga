@@ -1,0 +1,399 @@
+.saga-detail-page {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1rem;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.breadcrumb-button {
+  background: none;
+  border: none;
+  color: #0d6efd;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.breadcrumb-button:hover {
+  background: rgba(13, 110, 253, 0.1);
+}
+
+.breadcrumb-separator {
+  color: #6c757d;
+}
+
+.current-saga {
+  color: #495057;
+  font-weight: 500;
+}
+
+.back-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background: #5a6268;
+}
+
+/* Saga Header */
+.saga-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.saga-title-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.saga-title-section h2 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.saga-status {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.status-active {
+  background: #cfe2ff;
+  color: #084298;
+}
+
+.status-completed {
+  background: #d1e7dd;
+  color: #0a3622;
+}
+
+.status-aborted {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.saga-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: #000;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #bb2d3b;
+}
+
+/* Saga Info Section */
+.saga-info-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.info-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row strong {
+  min-width: 150px;
+  color: #495057;
+}
+
+.info-row code {
+  background: #f8f9fa;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #d63384;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #0d6efd;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: 'Courier New', monospace;
+}
+
+.link-button:hover {
+  color: #0a58ca;
+}
+
+/* Tasks Section */
+.tasks-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.tasks-section h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.4rem;
+  color: #212529;
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-item {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.task-header:hover {
+  background: #e9ecef;
+}
+
+.task-toggle {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.task-name {
+  flex: 1;
+  font-weight: 500;
+  color: #212529;
+}
+
+.task-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-started {
+  background: #fff3cd;
+  color: #997404;
+}
+
+.status-not_started {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.status-compensating {
+  background: #ffc107;
+  color: #000;
+}
+
+.status-compensated {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.task-details {
+  padding: 15px;
+  background: white;
+  border-top: 1px solid #dee2e6;
+}
+
+.task-data {
+  margin-bottom: 15px;
+}
+
+.task-data strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.task-data pre {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0;
+  font-size: 0.9rem;
+  border: 1px solid #dee2e6;
+}
+
+.task-child-sagas strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #495057;
+}
+
+.task-child-sagas ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.task-child-sagas li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.child-saga-link {
+  background: none;
+  border: none;
+  color: #0d6efd;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: 'Courier New', monospace;
+  flex: 1;
+  text-align: left;
+}
+
+.child-saga-link:hover {
+  color: #0a58ca;
+}
+
+.saga-status-badge {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Child Sagas Section */
+.child-sagas-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.child-sagas-section h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.4rem;
+  color: #212529;
+}
+
+.child-sagas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.child-saga-card {
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.child-saga-card:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+  transform: translateY(-2px);
+}
+
+.child-saga-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 10px;
+  word-break: break-all;
+}
+
+.child-saga-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.child-saga-parent-task {
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-style: italic;
+}
