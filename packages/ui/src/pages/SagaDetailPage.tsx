@@ -182,13 +182,22 @@ export const SagaDetailPage: React.FC = () => {
                   <span className="task-toggle">
                     {isTaskExpanded(task.taskName) ? '▼' : '►'}
                   </span>
-                  <span className="task-name">{task.taskName}</span>
+                  <span className="task-name">
+                    {task.taskName}
+                    {task.error && <span className="error-indicator" title="This task has an error">⚠️</span>}
+                  </span>
                   <span className={`task-status status-${task.status}`}>
                     {task.status}
                   </span>
                 </div>
                 {isTaskExpanded(task.taskName) && (
                   <div className="task-details">
+                    {task.error && (
+                      <div className="task-error">
+                        <strong>Error:</strong>
+                        <pre className="error-content">{JSON.stringify(task.error, null, 2)}</pre>
+                      </div>
+                    )}
                     {task.data && (
                       <div className="task-data">
                         <strong>Data:</strong>

@@ -194,6 +194,13 @@
   font-weight: 600;
 }
 
+.stat-badge.error-badge {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  cursor: help;
+}
+
 .saga-actions {
   display: flex;
   gap: 8px;

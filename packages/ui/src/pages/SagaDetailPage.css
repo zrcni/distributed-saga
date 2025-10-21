@@ -275,6 +275,40 @@
   border-top: 1px solid #dee2e6;
 }
 
+.error-indicator {
+  margin-left: 8px;
+  font-size: 1rem;
+  cursor: help;
+}
+
+.task-error {
+  margin-bottom: 15px;
+  padding: 12px;
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 6px;
+}
+
+.task-error strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #856404;
+  font-weight: 600;
+}
+
+.task-error .error-content {
+  background: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0;
+  font-size: 0.9rem;
+  border: 1px solid #ffc107;
+  color: #721c24;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .task-data {
   margin-bottom: 15px;
 }

@@ -140,6 +140,11 @@ export const SagasPage: React.FC = () => {
                     {saga.childSagas.length} child saga{saga.childSagas.length !== 1 ? 's' : ''}
                   </span>
                 )}
+                {saga.tasks && saga.tasks.some(task => task.error) && (
+                  <span className="stat-badge error-badge" title="This saga has tasks with errors">
+                    ⚠️ Has Errors
+                  </span>
+                )}
               </div>
 
               <div className="saga-actions" onClick={(e) => e.stopPropagation()}>
