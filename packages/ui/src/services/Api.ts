@@ -75,6 +75,13 @@ export class Api {
     );
   }
 
+  async deleteSaga(sourceName: string, sagaId: string): Promise<{ success: boolean }> {
+    return this.fetch<{ success: boolean }>(
+      `/sources/${sourceName}/sagas/${sagaId}`,
+      { method: 'DELETE' }
+    );
+  }
+
   async getConfig(): Promise<{ uiConfig: any; basePath: string }> {
     return this.fetch<{ uiConfig: any; basePath: string }>('/config');
   }

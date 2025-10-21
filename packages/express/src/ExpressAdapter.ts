@@ -181,6 +181,29 @@ export class ExpressAdapter implements IServerAdapter {
       }
     });
 
+    // Delete saga
+    this.router.delete('/api/sources/:name/sagas/:sagaId', async (req: Request, res: Response) => {
+      try {
+        const { name, sagaId } = req.params;
+        const adapter = this.findAdapter(name);
+
+        if (!adapter) {
+          return res.status(404).json({ error: 'Source not found' });
+        }
+
+        const request = this.mapRequest(req);
+        if (adapter.isVisible && !adapter.isVisible(request)) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+
+        await adapter.deleteSaga(sagaId);
+        res.json({ success: true });
+      } catch (error: any) {
+        console.error('Error deleting saga:', error);
+        res.status(500).json({ error: error.message || 'Failed to delete saga' });
+      }
+    });
+
     // Get board configuration
     this.router.get('/api/config', (req: Request, res: Response) => {
       res.json({

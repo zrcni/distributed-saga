@@ -48,6 +48,7 @@ export interface ISagaAdapter {
   getSagaInfo(sagaId: string): Promise<SagaInfo | null>;
   abortSaga(sagaId: string): Promise<void>;
   retrySaga(sagaId: string): Promise<void>;
+  deleteSaga(sagaId: string): Promise<void>;
   setVisibilityGuard?(guard: (req: SagaBoardRequest) => boolean): void;
   isVisible?(req: SagaBoardRequest): boolean;
 }

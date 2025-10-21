@@ -193,6 +193,18 @@ export class SagaAdapter implements ISagaAdapter {
     throw new Error('Retry not yet implemented');
   }
 
+  async deleteSaga(sagaId: string): Promise<void> {
+    if (this.isReadOnly()) {
+      throw new Error('Cannot delete saga in read-only mode');
+    }
+
+    const deleteResult = await this.coordinator.log.deleteSaga(sagaId);
+
+    if (deleteResult.isError()) {
+      throw new Error('Failed to delete saga');
+    }
+  }
+
   setVisibilityGuard(guard: (req: SagaBoardRequest) => boolean): void {
     this.visibilityGuard = guard;
   }

@@ -64,6 +64,17 @@ export const SagasPage: React.FC = () => {
     }
   };
 
+  const handleDelete = async (sagaId: string) => {
+    if (!name || !confirm('Are you sure you want to delete this saga? This action cannot be undone.')) return;
+
+    try {
+      await api.deleteSaga(name, sagaId);
+      loadSagas();
+    } catch (err) {
+      alert(`Failed to delete saga: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
   if (loading && sagas.length === 0) {
     return (
       <div className="container">
@@ -244,6 +255,17 @@ export const SagasPage: React.FC = () => {
                     onClick={() => handleAbort(saga.sagaId)}
                   >
                     Abort Saga
+                  </button>
+                </div>
+              )}
+
+              {saga.status === 'completed' && (
+                <div className="actions">
+                  <button
+                    className="btn btn-delete"
+                    onClick={() => handleDelete(saga.sagaId)}
+                  >
+                    Delete Saga
                   </button>
                 </div>
               )}
