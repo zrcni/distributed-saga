@@ -57,6 +57,35 @@ export class SagaCoordinator {
     return Result.ok(saga)
   }
 
+  /**
+   * Attempts to recover an existing saga by sagaId, or creates a new one if it doesn't exist.
+   * This is useful for idempotent saga execution where you want to resume an existing saga
+   * if it was interrupted, or start a new one if this is the first attempt.
+   * 
+   * @param sagaId - Unique identifier for the saga
+   * @param job - Initial job data for the saga (used only if creating new)
+   * @param recoveryType - Type of recovery to perform if saga exists (default: ForwardRecovery)
+   * @param parentSagaId - Optional parent saga ID for nested sagas
+   * @returns Result containing the recovered or newly created saga
+   */
+  async recoverOrCreate<D = unknown>(
+    sagaId: string,
+    job: D,
+    recoveryType: SagaRecoveryType = SagaRecoveryType.ForwardRecovery,
+    parentSagaId?: string | null
+  ): Promise<Result<Saga<D>> | Result<Error>> {
+    // First, try to recover existing saga
+    const recoveryResult = await this.recoverSagaState<D>(sagaId, recoveryType)
+    
+    // If recovery succeeded, return the recovered saga
+    if (recoveryResult.isOk()) {
+      return recoveryResult
+    }
+
+    // If saga doesn't exist or recovery failed, create a new one
+    return this.createSaga<D>(sagaId, job, parentSagaId)
+  }
+
   static create(log: SagaLog) {
     return new SagaCoordinator(log)
   }

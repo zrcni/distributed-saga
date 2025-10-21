@@ -378,4 +378,160 @@ describe("SagaCoordinator", () => {
       expect(retrievedJob.items).toHaveLength(2)
     })
   })
+
+  describe("recoverOrCreate", () => {
+    it("should create a new saga when saga does not exist", async () => {
+      const sagaId = "new-saga"
+      const jobData = { orderId: "order-001", amount: 100 }
+
+      const result = await coordinator.recoverOrCreate(sagaId, jobData)
+
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      expect(result.data).toBeInstanceOf(Saga)
+      expect(result.data.sagaId).toBe(sagaId)
+      
+      const retrievedJob = await result.data.getJob()
+      expect(retrievedJob).toEqual(jobData)
+    })
+
+    it("should recover existing saga when saga exists", async () => {
+      const sagaId = "existing-saga"
+      const jobData = { orderId: "order-002", amount: 200 }
+
+      // First, create a saga and add some tasks
+      const createResult = await coordinator.createSaga(sagaId, jobData)
+      expect(createResult).toBeOkResult()
+      if (createResult.isError()) return
+
+      const saga = createResult.data
+
+      // Start and complete a task
+      await saga.startTask("task-1", { input: "data" })
+      await saga.endTask("task-1", { output: "result" })
+
+      // Now try to recover or create - should recover the existing saga
+      const recoverResult = await coordinator.recoverOrCreate(
+        sagaId,
+        jobData,
+        SagaRecoveryType.ForwardRecovery
+      )
+
+      expect(recoverResult).toBeOkResult()
+      if (recoverResult.isError()) return
+
+      expect(recoverResult.data).toBeInstanceOf(Saga)
+      expect(recoverResult.data.sagaId).toBe(sagaId)
+      
+      const recoveredJob = await recoverResult.data.getJob()
+      expect(recoveredJob).toEqual(jobData)
+      
+      // Verify the task is still completed
+      expect(await recoverResult.data.isTaskCompleted("task-1")).toBe(true)
+    })
+
+    it("should use default ForwardRecovery when recoveryType not specified", async () => {
+      const sagaId = "default-recovery-saga"
+      const jobData = { test: "data" }
+
+      // Create saga and add a task
+      const createResult = await coordinator.createSaga(sagaId, jobData)
+      expect(createResult).toBeOkResult()
+      if (createResult.isError()) return
+
+      const saga = createResult.data
+      await saga.startTask("task-1", {})
+      await saga.endTask("task-1", {})
+
+      // Recover without specifying recovery type (should default to ForwardRecovery)
+      const result = await coordinator.recoverOrCreate(sagaId, jobData)
+
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      expect(result.data.sagaId).toBe(sagaId)
+      expect(await result.data.isTaskCompleted("task-1")).toBe(true)
+    })
+
+    it("should create new saga when recovery fails for non-existent saga", async () => {
+      const sagaId = "non-existent-saga"
+      const jobData = { orderId: "order-003", amount: 300 }
+
+      // Try to recover a saga that doesn't exist - should create new one
+      const result = await coordinator.recoverOrCreate(
+        sagaId,
+        jobData,
+        SagaRecoveryType.ForwardRecovery
+      )
+
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      expect(result.data).toBeInstanceOf(Saga)
+      expect(result.data.sagaId).toBe(sagaId)
+      
+      const retrievedJob = await result.data.getJob()
+      expect(retrievedJob).toEqual(jobData)
+    })
+
+    it("should support parentSagaId parameter", async () => {
+      const parentSagaId = "parent-saga"
+      const childSagaId = "child-saga"
+      const jobData = { test: "child-data" }
+
+      // Create parent saga first
+      const parentResult = await coordinator.createSaga(parentSagaId, {
+        test: "parent",
+      })
+      expect(parentResult).toBeOkResult()
+
+      // Create child saga with parent reference
+      const result = await coordinator.recoverOrCreate(
+        childSagaId,
+        jobData,
+        SagaRecoveryType.ForwardRecovery,
+        parentSagaId
+      )
+
+      expect(result).toBeOkResult()
+      if (result.isError()) return
+
+      expect(result.data.sagaId).toBe(childSagaId)
+      
+      // Verify the saga was created with parent reference
+      const messages = await log.getMessages(childSagaId)
+      expect(messages).toBeOkResult()
+      if (messages.isError()) return
+
+      const startMessage = messages.data[0]
+      expect(startMessage.parentSagaId).toBe(parentSagaId)
+    })
+
+    it("should work with different data types", async () => {
+      const stringResult = await coordinator.recoverOrCreate(
+        "saga-string",
+        "string-data"
+      )
+      expect(stringResult).toBeOkResult()
+
+      const numberResult = await coordinator.recoverOrCreate(
+        "saga-number",
+        42
+      )
+      expect(numberResult).toBeOkResult()
+
+      const objectResult = await coordinator.recoverOrCreate(
+        "saga-object",
+        { key: "value" }
+      )
+      expect(objectResult).toBeOkResult()
+
+      const arrayResult = await coordinator.recoverOrCreate(
+        "saga-array",
+        [1, 2, 3]
+      )
+      expect(arrayResult).toBeOkResult()
+    })
+  })
 })
