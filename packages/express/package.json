@@ -1,6 +1,6 @@
 {
   "name": "@zrcni/distributed-saga-board-express",
-  "version": "0.0.4-alpha.3",
+  "version": "0.0.4-alpha.4",
   "description": "Saga Board Express Adapter - Express.js adapter for Saga Dashboard",
   "author": "zrcni",
   "license": "MIT",
@@ -45,7 +45,7 @@
     "express"
   ],
   "dependencies": {
-    "@zrcni/distributed-saga-board-api": "^0.0.4-alpha.3",
+    "@zrcni/distributed-saga-board-api": "^0.0.4-alpha.4",
     "@zrcni/distributed-saga-board-ui": "^0.0.4-alpha.1",
     "ejs": "^3.1.9"
   },
