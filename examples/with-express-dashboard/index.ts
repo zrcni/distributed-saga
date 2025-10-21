@@ -139,13 +139,15 @@ async function createNestedSagasExample() {
     const childResults = []
     for (let i = 1; i <= pageCount; i++) {
       const childSagaId = `${parentSagaId}-page${i}`
-      const childResult = await coordinator.createChildSaga(
-        parentSagaId,
-        "crawlAllPages", // taskId - the parent task that creates child sagas
+      const childResult = await coordinator.createSaga(
         childSagaId,
         {
           url: `https://${domain}/page${i}`,
           pageNumber: i,
+        },
+        {
+          parentSagaId: parentSagaId,
+          parentTaskId: "crawlAllPages", // the parent task that creates child sagas
         }
       )
 
@@ -172,9 +174,7 @@ async function createNestedSagasExample() {
           
           // Create nested child saga for content processing
           const processSagaId = `${childSagaId}-process-content`
-          const processResult = await coordinator.createChildSaga(
-            childSagaId,
-            "processContent",
+          const processResult = await coordinator.createSaga(
             processSagaId,
             {
               pageId: childSagaId,
@@ -226,13 +226,15 @@ async function createNestedSagasExample() {
           await child.startTask("processContent")
           
           const processSagaId = `${childSagaId}-process-content`
-          const processResult = await coordinator.createChildSaga(
-            childSagaId,
-            "processContent",
+          const processResult = await coordinator.createSaga(
             processSagaId,
             {
               pageId: childSagaId,
               contentType: "webpage",
+            },
+            {
+              parentSagaId: childSagaId,
+              parentTaskId: "processContent",
             }
           )
           

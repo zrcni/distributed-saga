@@ -10,11 +10,13 @@ export class SagaCoordinator {
     this.log = log
   }
 
-  async createSaga<D = unknown>(sagaId: string, job: D, parentSagaId?: string | null) {
-    return Saga.create<D>(sagaId, job, this.log, parentSagaId ?? null)
-  }
-
-  async createChildSaga<D = unknown>(parentSagaId: string, parentTaskId: string, sagaId: string, job: D) {
+  async createSaga<D = unknown>(
+    sagaId: string, 
+    job: D, 
+    parent?: { parentSagaId: string; parentTaskId: string } | null
+  ) {
+    const parentSagaId = parent?.parentSagaId ?? null
+    const parentTaskId = parent?.parentTaskId ?? null
     return Saga.create<D>(sagaId, job, this.log, parentSagaId, parentTaskId)
   }
 
@@ -219,14 +221,14 @@ export class SagaCoordinator {
    * @param sagaId - Unique identifier for the saga
    * @param job - Initial job data for the saga (used only if creating new)
    * @param recoveryType - Type of recovery to perform if saga exists (default: ForwardRecovery)
-   * @param parentSagaId - Optional parent saga ID for nested sagas
+   * @param parent - Optional parent saga information for nested sagas
    * @returns Result containing the recovered or newly created saga
    */
   async recoverOrCreate<D = unknown>(
     sagaId: string,
     job: D,
     recoveryType: SagaRecoveryType = SagaRecoveryType.ForwardRecovery,
-    parentSagaId?: string | null
+    parent?: { parentSagaId: string; parentTaskId: string } | null
   ): Promise<Result<Saga<D>> | Result<Error>> {
     // First, try to recover existing saga
     const recoveryResult = await this.recoverSagaState<D>(sagaId, recoveryType)
@@ -237,7 +239,7 @@ export class SagaCoordinator {
     }
 
     // If saga doesn't exist or recovery failed, create a new one
-    return this.createSaga<D>(sagaId, job, parentSagaId)
+    return this.createSaga<D>(sagaId, job, parent)
   }
 
   static create(log: SagaLog) {

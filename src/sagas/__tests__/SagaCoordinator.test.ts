@@ -493,7 +493,7 @@ describe("SagaCoordinator", () => {
         childSagaId,
         jobData,
         SagaRecoveryType.ForwardRecovery,
-        parentSagaId
+        { parentSagaId, parentTaskId: "test-task" }
       )
 
       expect(result).toBeOkResult()
@@ -508,6 +508,7 @@ describe("SagaCoordinator", () => {
 
       const startMessage = messages.data[0]
       expect(startMessage.parentSagaId).toBe(parentSagaId)
+      expect(startMessage.parentTaskId).toBe("test-task")
     })
 
     it("should work with different data types", async () => {

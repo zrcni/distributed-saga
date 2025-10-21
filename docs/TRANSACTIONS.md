@@ -199,8 +199,8 @@ async function main() {
   
   // Create a parent saga with children
   const parentSaga = await coordinator.createSaga('parent-1', { task: 'parent' })
-  const child1 = await coordinator.createChildSaga('parent-1', 'task-1', 'child-1', { task: 'child-1' })
-  const child2 = await coordinator.createChildSaga('parent-1', 'task-2', 'child-2', { task: 'child-2' })
+  const child1 = await coordinator.createSaga('child-1', { task: 'child-1' }, { parentSagaId: 'parent-1', parentTaskId: 'task-1' })
+  const child2 = await coordinator.createSaga('child-2', { task: 'child-2' }, { parentSagaId: 'parent-1', parentTaskId: 'task-2' })
   
   // ... execute saga logic ...
   

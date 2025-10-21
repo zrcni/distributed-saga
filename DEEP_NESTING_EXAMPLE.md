@@ -71,11 +71,13 @@ Level 1: Parent Saga (crawl-example-com)
 
 ### Creating the Page Crawler (Level 2)
 ```typescript
-const childResult = await coordinator.createChildSaga(
-  parentSagaId,           // crawl-example-com
-  "crawlAllPages",        // parent task
+const childResult = await coordinator.createSaga(
   childSagaId,            // crawl-example-com-page1
-  { url: "...", pageNumber: 1 }
+  { url: "...", pageNumber: 1 },
+  {
+    parentSagaId: parentSagaId,  // crawl-example-com
+    parentTaskId: "crawlAllPages" // parent task
+  }
 )
 ```
 
@@ -84,10 +86,14 @@ const childResult = await coordinator.createChildSaga(
 await child.startTask("processContent")
 
 const processSagaId = `${childSagaId}-process-content`
-const processResult = await coordinator.createChildSaga(
-  childSagaId,            // crawl-example-com-page1
-  "processContent",       // parent task in page crawler
+const processResult = await coordinator.createSaga(
   processSagaId,          // crawl-example-com-page1-process-content
+  { pageId: childSagaId, contentType: "webpage" },
+  {
+    parentSagaId: childSagaId,      // crawl-example-com-page1
+    parentTaskId: "processContent"  // parent task in page crawler
+  }
+)
   { pageId: childSagaId, contentType: "webpage" }
 )
 
