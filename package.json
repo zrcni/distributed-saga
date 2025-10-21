@@ -39,7 +39,8 @@
     "test": "jest --forceExit --detectOpenHandles",
     "test:no-mongo": "jest --config jest.config.no-mongo.js --forceExit --detectOpenHandles",
     "test:mongo": "jest MongoDBSagaLog.test.ts --forceExit --detectOpenHandles",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "example:plugins": "ts-node -r tsconfig-paths/register examples/saga-plugins-example.ts"
   },
   "dependencies": {
     "cancelable-promise": "^4.3.1",
