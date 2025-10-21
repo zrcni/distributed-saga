@@ -1,9 +1,13 @@
 export interface SagaInfo {
   sagaId: string;
   status: string;
+  createdAt?: string;
+  updatedAt?: string;
   tasks?: Array<{
     taskName: string;
     status: string;
+    startedAt?: string;
+    completedAt?: string;
     data?: any;
     error?: any;
     childSagas?: SagaInfo[];  // Child sagas created by this task

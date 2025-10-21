@@ -176,6 +176,11 @@
   color: #d63384;
 }
 
+.info-row .timestamp {
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
 .link-button {
   background: none;
   border: none;
@@ -279,6 +284,40 @@
   margin-left: 8px;
   font-size: 1rem;
   cursor: help;
+}
+
+.task-timestamps {
+  display: flex;
+  gap: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.timestamp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timestamp-item strong {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.timestamp-item .timestamp {
+  font-size: 0.9rem;
+  color: #212529;
+  font-family: 'Courier New', monospace;
+}
+
+.timestamp-item .duration {
+  font-size: 0.9rem;
+  color: #0c63e4;
+  font-weight: 600;
 }
 
 .task-error {

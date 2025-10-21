@@ -15,6 +15,7 @@ type Params<D> = {
   taskId?: string
   parentSagaId?: string | null
   parentTaskId?: string | null
+  timestamp?: Date
 }
 
 export class SagaMessage<Data = unknown> {
@@ -24,14 +25,16 @@ export class SagaMessage<Data = unknown> {
   taskId?: string
   parentSagaId?: string | null
   parentTaskId?: string | null
+  timestamp: Date
 
-  constructor({ sagaId, msgType, data, taskId, parentSagaId, parentTaskId }: Params<Data>) {
+  constructor({ sagaId, msgType, data, taskId, parentSagaId, parentTaskId, timestamp }: Params<Data>) {
     this.sagaId = sagaId
     this.msgType = msgType
     this.data = data
     this.taskId = taskId
     this.parentSagaId = parentSagaId
     this.parentTaskId = parentTaskId
+    this.timestamp = timestamp || new Date()
   }
 
   static createStartSagaMessage<D = unknown>(

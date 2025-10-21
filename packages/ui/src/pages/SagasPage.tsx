@@ -147,6 +147,13 @@ export const SagasPage: React.FC = () => {
                 )}
               </div>
 
+              {saga.createdAt && (
+                <div className="saga-timestamp">
+                  <span className="timestamp-label">Created:</span>
+                  <span className="timestamp-value">{new Date(saga.createdAt).toLocaleString()}</span>
+                </div>
+              )}
+
               <div className="saga-actions" onClick={(e) => e.stopPropagation()}>
                 {saga.status === 'active' && (
                   <button

@@ -201,6 +201,24 @@
   cursor: help;
 }
 
+.saga-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.timestamp-label {
+  font-weight: 600;
+}
+
+.timestamp-value {
+  font-family: 'Courier New', monospace;
+  color: #495057;
+}
+
 .saga-actions {
   display: flex;
   gap: 8px;

@@ -67,8 +67,21 @@ export class SagaAdapter implements ISagaAdapter {
       let sagaAborted = false;
       let sagaCompleted = false;
       let job: any = null;
+      let createdAt: Date | undefined;
+      let updatedAt: Date | undefined;
 
       for (const msg of messages) {
+        // Track saga timestamps
+        if (msg.msgType === SagaMessageType.StartSaga && !createdAt) {
+          createdAt = msg.timestamp;
+        }
+        // Update updatedAt with every message
+        if (msg.timestamp) {
+          if (!updatedAt || msg.timestamp > updatedAt) {
+            updatedAt = msg.timestamp;
+          }
+        }
+
         switch (msg.msgType) {
           case SagaMessageType.StartSaga:
             job = msg.data;
@@ -79,6 +92,7 @@ export class SagaAdapter implements ISagaAdapter {
               taskName: msg.taskId,
               status: 'started',
               data: msg.data,
+              startedAt: msg.timestamp,
             });
             break;
 
@@ -87,6 +101,7 @@ export class SagaAdapter implements ISagaAdapter {
             if (task) {
               task.status = 'completed';
               task.data = msg.data;
+              task.completedAt = msg.timestamp;
             }
             break;
 
@@ -101,6 +116,7 @@ export class SagaAdapter implements ISagaAdapter {
             const compensatedTask = tasks.get(msg.taskId);
             if (compensatedTask) {
               compensatedTask.status = 'compensated';
+              compensatedTask.completedAt = msg.timestamp;
             }
             break;
 
@@ -140,6 +156,8 @@ export class SagaAdapter implements ISagaAdapter {
       return {
         sagaId,
         status,
+        createdAt,
+        updatedAt,
         job,
         tasks: taskArray,
         parentSagaId,

@@ -150,6 +150,18 @@ export const SagaDetailPage: React.FC = () => {
           <strong>Saga ID:</strong>
           <code>{saga.sagaId}</code>
         </div>
+        {saga.createdAt && (
+          <div className="info-row">
+            <strong>Created At:</strong>
+            <span className="timestamp">{new Date(saga.createdAt).toLocaleString()}</span>
+          </div>
+        )}
+        {saga.updatedAt && (
+          <div className="info-row">
+            <strong>Updated At:</strong>
+            <span className="timestamp">{new Date(saga.updatedAt).toLocaleString()}</span>
+          </div>
+        )}
         {saga.parentSagaId && (
           <div className="info-row">
             <strong>Parent Saga:</strong>
@@ -192,6 +204,30 @@ export const SagaDetailPage: React.FC = () => {
                 </div>
                 {isTaskExpanded(task.taskName) && (
                   <div className="task-details">
+                    {(task.startedAt || task.completedAt) && (
+                      <div className="task-timestamps">
+                        {task.startedAt && (
+                          <div className="timestamp-item">
+                            <strong>Started:</strong>
+                            <span className="timestamp">{new Date(task.startedAt).toLocaleString()}</span>
+                          </div>
+                        )}
+                        {task.completedAt && (
+                          <div className="timestamp-item">
+                            <strong>Completed:</strong>
+                            <span className="timestamp">{new Date(task.completedAt).toLocaleString()}</span>
+                          </div>
+                        )}
+                        {task.startedAt && task.completedAt && (
+                          <div className="timestamp-item">
+                            <strong>Duration:</strong>
+                            <span className="duration">
+                              {Math.round((new Date(task.completedAt).getTime() - new Date(task.startedAt).getTime()) / 1000)}s
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {task.error && (
                       <div className="task-error">
                         <strong>Error:</strong>
