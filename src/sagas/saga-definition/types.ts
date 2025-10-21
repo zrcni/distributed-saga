@@ -6,7 +6,10 @@ export type StepInvokeCallback<
 > = (
   data: Data,
   prevResult: PrevResultData,
-  middlewareData: MiddlewareData
+  middlewareData: MiddlewareData,
+  sagaId: string,
+  parentSagaId: string | null,
+  parentTaskId: string | null
 ) => Promise<ResultData> | ResultData
 
 export type StepCompensateCallback<
@@ -28,5 +31,8 @@ export type StepMiddlewareCallback<
 > = (
   data: Data,
   prevResult: PrevResultData,
-  middlewareData: MiddlewareData
+  middlewareData: MiddlewareData,
+  sagaId: string,
+  parentSagaId: string | null,
+  parentTaskId: string | null
 ) => Promise<void | boolean | ResultData> | void | boolean | ResultData

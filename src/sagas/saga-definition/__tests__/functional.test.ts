@@ -201,7 +201,14 @@ describe("Functional Saga API", () => {
 
       expect(step1Invoke).toHaveBeenCalledTimes(1)
       expect(step2Invoke).toHaveBeenCalledTimes(1)
-      expect(step2Invoke).toHaveBeenCalledWith({ initial: true }, { value: 1 }, {})
+      expect(step2Invoke).toHaveBeenCalledWith(
+        { initial: true }, 
+        { value: 1 }, 
+        {},
+        "test-saga",
+        null,
+        null
+      )
     })
 
     it("should execute compensation when a step fails", async () => {
@@ -276,9 +283,9 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {})
-      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {})
-      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {})
+      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {}, "test-saga", null, null)
+      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {}, "test-saga", null, null)
+      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {}, "test-saga", null, null)
     })
 
     it("should execute compensations in reverse order", async () => {
@@ -540,7 +547,7 @@ describe("Functional Saga API", () => {
       await orchestrator.run(saga, sagaDefinition)
 
       expect(middleware).toHaveBeenCalledTimes(1)
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {})
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {}, "test-saga", null, null)
       expect(stepInvoke).toHaveBeenCalledTimes(1)
     })
 
@@ -654,7 +661,7 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {})
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {}, "test-saga", null, null)
       expect(step2Invoke).toHaveBeenCalledTimes(1)
     })
 

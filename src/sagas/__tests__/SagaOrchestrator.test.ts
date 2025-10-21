@@ -149,8 +149,8 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware1).toHaveBeenCalledWith("mock data", null, {})
-    expect(middleware2).toHaveBeenCalledWith("mock data", null, {})
+    expect(middleware1).toHaveBeenCalledWith("mock data", null, {}, "test id", null, null)
+    expect(middleware2).toHaveBeenCalledWith("mock data", null, {}, "test id", null, null)
     expect(step1Invoke).toHaveBeenCalled()
     expect(step2Invoke).toHaveBeenCalled()
     expect(step3Invoke).toHaveBeenCalled()
@@ -268,8 +268,8 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware).toHaveBeenCalledWith("mock data", "step1 result", {})
-    expect(step2Invoke).toHaveBeenCalledWith("mock data", "step1 result", {})
+    expect(middleware).toHaveBeenCalledWith("mock data", "step1 result", {}, "test id", null, null)
+    expect(step2Invoke).toHaveBeenCalledWith("mock data", "step1 result", {}, "test id", null, null)
   })
 
   /**
@@ -309,10 +309,17 @@ describe("SagaOrchestrator", () => {
 
     expect(middleware1).toHaveBeenCalled()
     expect(middleware2).toHaveBeenCalled()
-    expect(step2Invoke).toHaveBeenCalledWith("mock data", null, {
-      key1: "value1",
-      key2: "value2",
-    })
+    expect(step2Invoke).toHaveBeenCalledWith(
+      "mock data", 
+      null, 
+      {
+        key1: "value1",
+        key2: "value2",
+      },
+      "test id",
+      null,
+      null
+    )
   })
 })
 

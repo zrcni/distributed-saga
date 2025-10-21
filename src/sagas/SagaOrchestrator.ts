@@ -151,7 +151,7 @@ export class SagaOrchestrator extends EventEmitter {
       let middlewareData: Record<string, unknown> = {}
       if (step.middleware.length > 0) {
         try {
-          middlewareData = await this.runMiddleware(step, data, prevStepResult)
+          middlewareData = await this.runMiddleware(step, data, prevStepResult, saga)
           this.emit("middlewareSucceeded", {
             sagaId: saga.sagaId,
             data,
@@ -187,7 +187,14 @@ export class SagaOrchestrator extends EventEmitter {
         })
       }
 
-      const result = await step.invokeCallback(data, prevStepResult, middlewareData)
+      const result = await step.invokeCallback(
+        data, 
+        prevStepResult, 
+        middlewareData,
+        saga.sagaId,
+        saga.state.parentSagaId,
+        saga.state.parentTaskId
+      )
       const endTaskResult = await saga.endTask(step.taskName, result)
 
       if (endTaskResult.isError()) {
@@ -207,15 +214,23 @@ export class SagaOrchestrator extends EventEmitter {
     return saga
   }
 
-  private async runMiddleware(
+  private async runMiddleware<StartPayload>(
     step: SagaStep,
     data: unknown,
-    prevStepResult: unknown
+    prevStepResult: unknown,
+    saga: Saga<StartPayload>
   ): Promise<Record<string, unknown>> {
     let accumulatedData: Record<string, unknown> = {}
     
     for (const middleware of step.middleware) {
-      const result = await middleware(data, prevStepResult, accumulatedData)
+      const result = await middleware(
+        data, 
+        prevStepResult, 
+        accumulatedData,
+        saga.sagaId,
+        saga.state.parentSagaId,
+        saga.state.parentTaskId
+      )
       
       // If middleware returns false explicitly, throw an error
       if (result === false) {
