@@ -26,6 +26,64 @@ export class SagaCoordinator {
     return this.log.getChildSagaIds(parentSagaId)
   }
 
+  /**
+   * Abort a saga and all its child sagas recursively.
+   * This is useful for aborting an entire saga hierarchy from the root.
+   * 
+   * @param sagaId - The saga ID to abort
+   * @returns Result indicating success or failure
+   */
+  async abortSagaWithChildren(sagaId: string): Promise<Result | Result<Error>> {
+    // First, recursively abort all child sagas
+    const childSagaIdsResult = await this.log.getChildSagaIds(sagaId)
+    if (childSagaIdsResult.isOk() && !childSagaIdsResult.isError()) {
+      const childSagaIds = childSagaIdsResult.data as string[]
+      for (const childId of childSagaIds) {
+        // Recursively abort each child (which will abort their children too)
+        await this.abortSagaWithChildren(childId)
+      }
+    }
+
+    // Then abort the saga itself
+    const recoverResult = await this.recoverSagaState(
+      sagaId,
+      SagaRecoveryType.RollbackRecovery
+    )
+
+    if (recoverResult.isError()) {
+      return recoverResult
+    }
+
+    const saga = recoverResult.data
+    const abortResult = await saga.abortSaga()
+    
+    return abortResult
+  }
+
+  /**
+   * Delete a saga and all its child sagas recursively.
+   * This is useful for cleaning up an entire saga hierarchy.
+   * 
+   * @param sagaId - The saga ID to delete
+   * @returns Result indicating success or failure
+   */
+  async deleteSagaWithChildren(sagaId: string): Promise<Result | Result<Error>> {
+    // First, recursively delete all child sagas
+    const childSagaIdsResult = await this.log.getChildSagaIds(sagaId)
+    if (childSagaIdsResult.isOk() && !childSagaIdsResult.isError()) {
+      const childSagaIds = childSagaIdsResult.data as string[]
+      for (const childId of childSagaIds) {
+        // Recursively delete each child (which will delete their children too)
+        await this.deleteSagaWithChildren(childId)
+      }
+    }
+
+    // Then delete the saga itself
+    const deleteResult = await this.log.deleteSaga(sagaId)
+    
+    return deleteResult
+  }
+
   async recoverSagaState<D = unknown>(
     sagaId: string,
     recoveryType: SagaRecoveryType

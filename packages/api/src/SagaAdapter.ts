@@ -169,17 +169,12 @@ export class SagaAdapter implements ISagaAdapter {
       throw new Error('Cannot abort saga in read-only mode');
     }
 
-    const recoverResult = await this.coordinator.recoverSagaState(
-      sagaId,
-      'rollback' as any
-    );
+    // Use the coordinator's method to recursively abort saga and all children
+    const abortResult = await this.coordinator.abortSagaWithChildren(sagaId);
 
-    if (recoverResult.isError()) {
-      throw new Error('Failed to abort saga');
+    if (abortResult.isError()) {
+      throw new Error('Failed to abort saga and its children');
     }
-
-    const saga = recoverResult.data;
-    await saga.abortSaga();
   }
 
   async retrySaga(sagaId: string): Promise<void> {
@@ -198,10 +193,11 @@ export class SagaAdapter implements ISagaAdapter {
       throw new Error('Cannot delete saga in read-only mode');
     }
 
-    const deleteResult = await this.coordinator.log.deleteSaga(sagaId);
+    // Use the coordinator's method to recursively delete saga and all children
+    const deleteResult = await this.coordinator.deleteSagaWithChildren(sagaId);
 
     if (deleteResult.isError()) {
-      throw new Error('Failed to delete saga');
+      throw new Error('Failed to delete saga and its children');
     }
   }
 

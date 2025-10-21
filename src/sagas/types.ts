@@ -12,4 +12,5 @@ export interface SagaLog {
   getMessages(sagaId: string): Promise<ResultOk<SagaMessage[]> | ResultError>
   getActiveSagaIds(): Promise<ResultOk<string[]> | ResultError>
   getChildSagaIds(parentSagaId: string): Promise<ResultOk<string[]> | ResultError>
+  deleteSaga(sagaId: string): Promise<ResultOk | ResultError> | ResultOk | ResultError
 }
