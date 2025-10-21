@@ -8,6 +8,8 @@ interface SagaDocument {
   messages: SagaMessage[]
   createdAt: Date
   updatedAt: Date
+  parentSagaId: string | null
+  parentTaskId: string | null
 }
 
 describe("MongoDBSagaLog", () => {

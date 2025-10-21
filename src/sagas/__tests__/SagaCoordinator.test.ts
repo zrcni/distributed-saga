@@ -287,6 +287,7 @@ describe("SagaCoordinator", () => {
         getMessages: jest.fn().mockResolvedValue(Result.ok([])),
         getActiveSagaIds: jest.fn().mockResolvedValue(Result.ok(["saga-1"])),
         getChildSagaIds: jest.fn().mockResolvedValue(Result.ok([])),
+        deleteSaga: jest.fn().mockResolvedValue(Result.ok()),
       }
 
       const customCoordinator = new SagaCoordinator(customLog)
@@ -310,6 +311,7 @@ describe("SagaCoordinator", () => {
           .fn()
           .mockResolvedValue(Result.error(new Error("Get IDs error"))),
         getChildSagaIds: jest.fn().mockResolvedValue(Result.ok([])),
+        deleteSaga: jest.fn().mockResolvedValue(Result.ok()),
       }
 
       const errorCoordinator = new SagaCoordinator(errorLog)

@@ -31,16 +31,64 @@ export class SagaCoordinator {
    * This is useful for aborting an entire saga hierarchy from the root.
    * 
    * @param sagaId - The saga ID to abort
+   * @param useTransaction - Whether to use a database transaction (if supported)
    * @returns Result indicating success or failure
    */
-  async abortSagaWithChildren(sagaId: string): Promise<Result | Result<Error>> {
+  async abortSagaWithChildren(sagaId: string, useTransaction = false): Promise<Result | Result<Error>> {
+    // If transactions are requested and supported, use them
+    if (useTransaction && this.log.beginTransaction) {
+      return this.abortSagaWithChildrenInTransaction(sagaId)
+    }
+
+    // Otherwise, use the non-transactional approach
+    return this.abortSagaWithChildrenNonTransactional(sagaId)
+  }
+
+  /**
+   * Internal: Abort saga and children with transaction support
+   */
+  private async abortSagaWithChildrenInTransaction(sagaId: string): Promise<Result | Result<Error>> {
+    if (!this.log.beginTransaction || !this.log.commitTransaction || !this.log.abortTransaction) {
+      return Result.error(new Error("Transaction methods not available on this SagaLog implementation"))
+    }
+
+    const session = await this.log.beginTransaction()
+    
+    try {
+      // Perform the abort within the transaction
+      const result = await this.abortSagaWithChildrenRecursive(sagaId, session)
+      
+      if (result.isError()) {
+        await this.log.abortTransaction(session)
+        return result
+      }
+
+      await this.log.commitTransaction(session)
+      return result
+    } catch (error) {
+      await this.log.abortTransaction(session)
+      return Result.error(error instanceof Error ? error : new Error(String(error)))
+    }
+  }
+
+  /**
+   * Internal: Abort saga and children without transaction support
+   */
+  private async abortSagaWithChildrenNonTransactional(sagaId: string): Promise<Result | Result<Error>> {
+    return this.abortSagaWithChildrenRecursive(sagaId)
+  }
+
+  /**
+   * Internal: Recursively abort saga and all children
+   */
+  private async abortSagaWithChildrenRecursive(sagaId: string, session?: any): Promise<Result | Result<Error>> {
     // First, recursively abort all child sagas
-    const childSagaIdsResult = await this.log.getChildSagaIds(sagaId)
+    const childSagaIdsResult = await this.log.getChildSagaIds(sagaId, session ? { session } : undefined)
     if (childSagaIdsResult.isOk() && !childSagaIdsResult.isError()) {
       const childSagaIds = childSagaIdsResult.data as string[]
       for (const childId of childSagaIds) {
         // Recursively abort each child (which will abort their children too)
-        await this.abortSagaWithChildren(childId)
+        await this.abortSagaWithChildrenRecursive(childId, session)
       }
     }
 
@@ -65,21 +113,69 @@ export class SagaCoordinator {
    * This is useful for cleaning up an entire saga hierarchy.
    * 
    * @param sagaId - The saga ID to delete
+   * @param useTransaction - Whether to use a database transaction (if supported)
    * @returns Result indicating success or failure
    */
-  async deleteSagaWithChildren(sagaId: string): Promise<Result | Result<Error>> {
+  async deleteSagaWithChildren(sagaId: string, useTransaction = false): Promise<Result | Result<Error>> {
+    // If transactions are requested and supported, use them
+    if (useTransaction && this.log.beginTransaction) {
+      return this.deleteSagaWithChildrenInTransaction(sagaId)
+    }
+
+    // Otherwise, use the non-transactional approach
+    return this.deleteSagaWithChildrenNonTransactional(sagaId)
+  }
+
+  /**
+   * Internal: Delete saga and children with transaction support
+   */
+  private async deleteSagaWithChildrenInTransaction(sagaId: string): Promise<Result | Result<Error>> {
+    if (!this.log.beginTransaction || !this.log.commitTransaction || !this.log.abortTransaction) {
+      return Result.error(new Error("Transaction methods not available on this SagaLog implementation"))
+    }
+
+    const session = await this.log.beginTransaction()
+    
+    try {
+      // Perform the delete within the transaction
+      const result = await this.deleteSagaWithChildrenRecursive(sagaId, session)
+      
+      if (result.isError()) {
+        await this.log.abortTransaction(session)
+        return result
+      }
+
+      await this.log.commitTransaction(session)
+      return result
+    } catch (error) {
+      await this.log.abortTransaction(session)
+      return Result.error(error instanceof Error ? error : new Error(String(error)))
+    }
+  }
+
+  /**
+   * Internal: Delete saga and children without transaction support
+   */
+  private async deleteSagaWithChildrenNonTransactional(sagaId: string): Promise<Result | Result<Error>> {
+    return this.deleteSagaWithChildrenRecursive(sagaId)
+  }
+
+  /**
+   * Internal: Recursively delete saga and all children
+   */
+  private async deleteSagaWithChildrenRecursive(sagaId: string, session?: any): Promise<Result | Result<Error>> {
     // First, recursively delete all child sagas
-    const childSagaIdsResult = await this.log.getChildSagaIds(sagaId)
+    const childSagaIdsResult = await this.log.getChildSagaIds(sagaId, session ? { session } : undefined)
     if (childSagaIdsResult.isOk() && !childSagaIdsResult.isError()) {
       const childSagaIds = childSagaIdsResult.data as string[]
       for (const childId of childSagaIds) {
         // Recursively delete each child (which will delete their children too)
-        await this.deleteSagaWithChildren(childId)
+        await this.deleteSagaWithChildrenRecursive(childId, session)
       }
     }
 
     // Then delete the saga itself
-    const deleteResult = await this.log.deleteSaga(sagaId)
+    const deleteResult = await this.log.deleteSaga(sagaId, session ? { session } : undefined)
     
     return deleteResult
   }

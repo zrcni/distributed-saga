@@ -1,6 +1,6 @@
 import { SagaAlreadyRunningError, SagaNotRunningError } from "@/errors"
 import { Result, ResultError, ResultOk } from "@/Result"
-import { SagaLog } from "./types"
+import { SagaLog, SagaLogTransactionOptions } from "./types"
 import { SagaCoordinator } from "./SagaCoordinator"
 import { SagaMessage } from "./SagaMessage"
 
@@ -42,7 +42,7 @@ export class InMemorySagaLog implements SagaLog {
     return Result.ok(sagaIds)
   }
 
-  async getChildSagaIds(parentSagaId: string): Promise<ResultOk<string[]>> {
+  async getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk<string[]>> {
     const childIds = this.childSagaIndex[parentSagaId]
     if (!childIds) {
       return Result.ok([])
@@ -108,7 +108,7 @@ export class InMemorySagaLog implements SagaLog {
   /**
    * Delete a saga from memory
    */
-  deleteSaga(sagaId: string): ResultOk | ResultError {
+  deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): ResultOk | ResultError {
     const sagaData = this.sagas[sagaId]
     if (!sagaData) {
       return Result.error(new SagaNotRunningError("saga not found", { sagaId }))
@@ -160,6 +160,28 @@ export class InMemorySagaLog implements SagaLog {
       }
     }
     return Result.ok(staleIds)
+  }
+
+  /**
+   * Begin a transaction (no-op for in-memory - not supported)
+   * Returns undefined to indicate no transaction is available
+   */
+  async beginTransaction(): Promise<undefined> {
+    return undefined
+  }
+
+  /**
+   * Commit a transaction (no-op for in-memory - not supported)
+   */
+  async commitTransaction(_session: any): Promise<void> {
+    // No-op: in-memory doesn't support transactions
+  }
+
+  /**
+   * Abort a transaction (no-op for in-memory - not supported)
+   */
+  async abortTransaction(_session: any): Promise<void> {
+    // No-op: in-memory doesn't support transactions
   }
 
   static createInMemorySagaCoordinator() {

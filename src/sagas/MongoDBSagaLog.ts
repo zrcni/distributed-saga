@@ -1,9 +1,9 @@
 import { SagaAlreadyRunningError, SagaNotRunningError } from "@/errors"
 import { Result, ResultError, ResultOk } from "@/Result"
-import { SagaLog } from "./types"
+import { SagaLog, SagaLogTransactionOptions } from "./types"
 import { SagaCoordinator } from "./SagaCoordinator"
 import { SagaMessage } from "./SagaMessage"
-import { Collection, ObjectId } from "mongodb"
+import { Collection, ObjectId, ClientSession } from "mongodb"
 
 interface SagaDocument {
   _id: ObjectId
@@ -61,10 +61,11 @@ export class MongoDBSagaLog implements SagaLog {
     }
   }
 
-  async getChildSagaIds(parentSagaId: string): Promise<ResultOk<string[]>> {
+  async getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk<string[]>> {
     try {
+      const findOptions = options?.session ? { session: options.session as ClientSession } : {}
       const docs = await this.collection
-        .find({ parentSagaId })
+        .find({ parentSagaId }, findOptions)
         .project<Pick<SagaDocument, "sagaId">>({ sagaId: 1 })
         .toArray()
       const childIds = docs.map((doc) => doc.sagaId)
@@ -162,9 +163,10 @@ export class MongoDBSagaLog implements SagaLog {
   /**
    * Clean up completed sagas
    */
-  async deleteSaga(sagaId: string): Promise<ResultOk | ResultError> {
+  async deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk | ResultError> {
     try {
-      await this.collection.deleteOne({ sagaId })
+      const deleteOptions = options?.session ? { session: options.session as ClientSession } : {}
+      await this.collection.deleteOne({ sagaId }, deleteOptions)
       return Result.ok()
     } catch (error) {
       return Result.error(
@@ -218,5 +220,30 @@ export class MongoDBSagaLog implements SagaLog {
         })
       )
     }
+  }
+
+  /**
+   * Begin a MongoDB transaction session
+   */
+  async beginTransaction(): Promise<ClientSession> {
+    const session = this.collection.db.client.startSession()
+    session.startTransaction()
+    return session
+  }
+
+  /**
+   * Commit a MongoDB transaction
+   */
+  async commitTransaction(session: ClientSession): Promise<void> {
+    await session.commitTransaction()
+    await session.endSession()
+  }
+
+  /**
+   * Abort/rollback a MongoDB transaction
+   */
+  async abortTransaction(session: ClientSession): Promise<void> {
+    await session.abortTransaction()
+    await session.endSession()
   }
 }
