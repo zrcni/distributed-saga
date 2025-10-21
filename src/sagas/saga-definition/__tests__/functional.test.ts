@@ -205,9 +205,7 @@ describe("Functional Saga API", () => {
         { initial: true }, 
         { value: 1 }, 
         {},
-        "test-saga",
-        null,
-        null
+        { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }
       )
     })
 
@@ -283,9 +281,9 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {}, "test-saga", null, null)
-      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {}, "test-saga", null, null)
-      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {}, "test-saga", null, null)
+      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
+      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
+      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
     })
 
     it("should execute compensations in reverse order", async () => {
@@ -547,7 +545,7 @@ describe("Functional Saga API", () => {
       await orchestrator.run(saga, sagaDefinition)
 
       expect(middleware).toHaveBeenCalledTimes(1)
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {}, "test-saga", null, null)
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
       expect(stepInvoke).toHaveBeenCalledTimes(1)
     })
 
@@ -661,7 +659,7 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {}, "test-saga", null, null)
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
       expect(step2Invoke).toHaveBeenCalledTimes(1)
     })
 

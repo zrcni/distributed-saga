@@ -151,7 +151,12 @@ export class SagaOrchestrator extends EventEmitter {
       let middlewareData: Record<string, unknown> = {}
       if (step.middleware.length > 0) {
         try {
-          middlewareData = await this.runMiddleware(step, data, prevStepResult, saga)
+          const sagaContext = {
+            sagaId: saga.sagaId,
+            parentSagaId: saga.state.parentSagaId,
+            parentTaskId: saga.state.parentTaskId,
+          }
+          middlewareData = await this.runMiddleware(step, data, prevStepResult, sagaContext)
           this.emit("middlewareSucceeded", {
             sagaId: saga.sagaId,
             data,
@@ -187,13 +192,16 @@ export class SagaOrchestrator extends EventEmitter {
         })
       }
 
+      const sagaContext = {
+        sagaId: saga.sagaId,
+        parentSagaId: saga.state.parentSagaId,
+        parentTaskId: saga.state.parentTaskId,
+      }
       const result = await step.invokeCallback(
         data, 
         prevStepResult, 
         middlewareData,
-        saga.sagaId,
-        saga.state.parentSagaId,
-        saga.state.parentTaskId
+        sagaContext
       )
       const endTaskResult = await saga.endTask(step.taskName, result)
 
@@ -214,11 +222,11 @@ export class SagaOrchestrator extends EventEmitter {
     return saga
   }
 
-  private async runMiddleware<StartPayload>(
+  private async runMiddleware(
     step: SagaStep,
     data: unknown,
     prevStepResult: unknown,
-    saga: Saga<StartPayload>
+    sagaContext: { sagaId: string; parentSagaId: string | null; parentTaskId: string | null }
   ): Promise<Record<string, unknown>> {
     let accumulatedData: Record<string, unknown> = {}
     
@@ -227,9 +235,7 @@ export class SagaOrchestrator extends EventEmitter {
         data, 
         prevStepResult, 
         accumulatedData,
-        saga.sagaId,
-        saga.state.parentSagaId,
-        saga.state.parentTaskId
+        sagaContext
       )
       
       // If middleware returns false explicitly, throw an error

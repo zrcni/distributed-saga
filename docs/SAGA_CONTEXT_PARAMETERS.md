@@ -2,15 +2,25 @@
 
 ## Overview
 
-As of this update, `StepInvokeCallback` and `StepMiddlewareCallback` now receive additional context parameters that provide information about the saga's hierarchy and identity.
+As of this update, `StepInvokeCallback` and `StepMiddlewareCallback` now receive a `SagaContext` object that provides safe, read-only access to saga metadata without exposing the full saga instance.
 
-## New Parameters
+## SagaContext Interface
 
-All invoke callbacks and middleware now receive three additional parameters:
+The `SagaContext` interface provides safe access to saga hierarchy information:
 
-1. **`sagaId`** (string): The unique identifier of the current saga
-2. **`parentSagaId`** (string | null): The ID of the parent saga if this is a child saga, or `null` if this is a root saga
-3. **`parentTaskId`** (string | null): The task ID in the parent saga that spawned this child saga, or `null` if this is a root saga
+```typescript
+interface SagaContext {
+  readonly sagaId: string
+  readonly parentSagaId: string | null
+  readonly parentTaskId: string | null
+}
+```
+
+**Key Design Principles:**
+- **Read-only**: All properties are readonly to prevent accidental modifications
+- **Serialized Data**: Contains only primitive values, no references to internal saga state
+- **Safe Access**: Middleware and callbacks cannot call saga methods or modify internal state
+- **Hierarchy Tracking**: Provides full context about parent-child saga relationships
 
 ## Updated Signatures
 
@@ -26,9 +36,7 @@ type StepInvokeCallback<
   data: Data,
   prevResult: PrevResultData,
   middlewareData: MiddlewareData,
-  sagaId: string,              // NEW
-  parentSagaId: string | null, // NEW
-  parentTaskId: string | null  // NEW
+  sagaContext: SagaContext  // NEW: Single context object
 ) => Promise<ResultData> | ResultData
 ```
 
@@ -44,9 +52,7 @@ type StepMiddlewareCallback<
   data: Data,
   prevResult: PrevResultData,
   middlewareData: MiddlewareData,
-  sagaId: string,              // NEW
-  parentSagaId: string | null, // NEW
-  parentTaskId: string | null  // NEW
+  sagaContext: SagaContext  // NEW: Single context object
 ) => Promise<void | boolean | ResultData> | void | boolean | ResultData
 ```
 
@@ -56,12 +62,12 @@ type StepMiddlewareCallback<
 
 ```typescript
 const sagaDefinition = SagaBuilder.start()
-  .invoke(async (data, prevResult, middlewareData, sagaId, parentSagaId, parentTaskId) => {
-    console.log(`Running in saga: ${sagaId}`)
+  .invoke(async (data, prevResult, middlewareData, sagaContext) => {
+    console.log(`Running in saga: ${sagaContext.sagaId}`)
     
-    if (parentSagaId) {
-      console.log(`This is a child saga of: ${parentSagaId}`)
-      console.log(`Spawned by task: ${parentTaskId}`)
+    if (sagaContext.parentSagaId) {
+      console.log(`This is a child saga of: ${sagaContext.parentSagaId}`)
+      console.log(`Spawned by task: ${sagaContext.parentTaskId}`)
     } else {
       console.log('This is a root saga')
     }
@@ -80,15 +86,11 @@ const sagaDefinition = SagaBuilder.start()
     orderData, 
     prevResult, 
     middlewareData, 
-    sagaId, 
-    parentSagaId, 
-    parentTaskId
+    sagaContext
   ) => {
     // Create hierarchical log entry
     const logEntry = {
-      sagaId,
-      parentSagaId,
-      parentTaskId,
+      ...sagaContext,  // Spread the context object
       timestamp: new Date(),
       action: 'processing_order',
       orderData
@@ -110,24 +112,18 @@ const sagaDefinition = SagaBuilder.start()
     data, 
     prevResult, 
     middlewareData, 
-    sagaId, 
-    parentSagaId, 
-    parentTaskId
+    sagaContext
   ) => {
     // Add saga context to middleware data
     return {
-      sagaContext: {
-        sagaId,
-        parentSagaId,
-        parentTaskId,
-        isChildSaga: parentSagaId !== null
-      }
+      sagaContext,  // Pass the entire context object
+      isChildSaga: sagaContext.parentSagaId !== null
     }
   })
-  .invoke(async (data, prevResult, middlewareData) => {
-    // Access saga context from middleware data
-    const { sagaContext } = middlewareData
-    console.log('Saga context:', sagaContext)
+  .invoke(async (data, prevResult, middlewareData, sagaContext) => {
+    // Access saga context from both sources
+    console.log('From parameter:', sagaContext)
+    console.log('From middleware:', middlewareData.sagaContext)
     
     return { success: true }
   })
@@ -143,16 +139,14 @@ const sagaDefinition = SagaBuilder.start()
     data, 
     prevResult, 
     middlewareData, 
-    sagaId, 
-    parentSagaId, 
-    parentTaskId
+    sagaContext
   ) => {
     // Store relationship for tracking
-    if (parentSagaId) {
+    if (sagaContext.parentSagaId) {
       await sagaTracker.recordChildSaga({
-        childSagaId: sagaId,
-        parentSagaId,
-        parentTaskId,
+        childSagaId: sagaContext.sagaId,
+        parentSagaId: sagaContext.parentSagaId,
+        parentTaskId: sagaContext.parentTaskId,
         startedAt: new Date()
       })
     }
@@ -181,24 +175,41 @@ const sagaDefinition = SagaBuilder.start()
     data, 
     prevResult, 
     middlewareData, 
-    sagaId, 
-    parentSagaId, 
-    parentTaskId
+    sagaContext
   ) => {
-    // Build execution tree node
+    // Build execution tree node from context
     const node: SagaNode = {
-      sagaId,
-      parentSagaId,
-      parentTaskId,
+      ...sagaContext,
       children: []
     }
     
     // Store in distributed tracking system
     await executionTreeService.addNode(node)
     
-    return { nodeId: sagaId }
+    return { nodeId: sagaContext.sagaId }
   })
   .withName("buildExecutionTree")
+  .end()
+```
+
+### Destructuring Context
+
+```typescript
+const sagaDefinition = SagaBuilder.start()
+  .invoke(async (
+    data, 
+    prevResult, 
+    middlewareData, 
+    { sagaId, parentSagaId, parentTaskId }  // Destructure for convenience
+  ) => {
+    // Use individual properties directly
+    if (parentSagaId) {
+      console.log(`Child saga ${sagaId} of parent ${parentSagaId}`)
+    }
+    
+    return { processed: true }
+  })
+  .withName("destructuredContext")
   .end()
 ```
 
@@ -216,7 +227,7 @@ These new parameters enable several advanced use cases:
 
 ## Migration Guide
 
-If you have existing saga definitions, you'll need to update your invoke callbacks and middleware to accept the new parameters:
+If you have existing saga definitions, you'll need to update your invoke callbacks and middleware to accept the new `SagaContext` parameter:
 
 ### Before
 ```typescript
@@ -226,16 +237,24 @@ If you have existing saga definitions, you'll need to update your invoke callbac
 })
 ```
 
-### After
+### After (Option 1 - Accept full context)
 ```typescript
-.invoke(async (data, prevResult, middlewareData, sagaId, parentSagaId, parentTaskId) => {
+.invoke(async (data, prevResult, middlewareData, sagaContext) => {
   // existing logic
-  // optionally use the new parameters
+  // optionally use sagaContext.sagaId, sagaContext.parentSagaId, etc.
   return result
 })
 ```
 
-**Note**: If you're not using the new parameters, you can still omit them from your function signature - JavaScript/TypeScript allows functions to ignore trailing parameters. However, for type safety, it's recommended to include all parameters in the signature.
+### After (Option 2 - Destructure context)
+```typescript
+.invoke(async (data, prevResult, middlewareData, { sagaId, parentSagaId, parentTaskId }) => {
+  // existing logic with destructured context
+  return result
+})
+```
+
+**Note**: If you're not using the context parameter, you can still omit it from your function signature - JavaScript/TypeScript allows functions to ignore trailing parameters. However, for type safety and future compatibility, it's recommended to include the parameter in the signature.
 
 ## TypeScript Type Safety
 
@@ -252,13 +271,41 @@ const sagaDefinition = SagaBuilder.start()
     data: OrderData,           // Type-safe data
     prevResult: unknown,        // Previous step result
     middlewareData: Record<string, unknown>, // Middleware data
-    sagaId: string,            // Always string
-    parentSagaId: string | null, // Can be null for root sagas
-    parentTaskId: string | null  // Can be null for root sagas
+    sagaContext: SagaContext   // Readonly context object
   ) => {
     // Full type safety and IntelliSense support
+    // sagaContext properties are readonly and cannot be modified
+    console.log(sagaContext.sagaId)  // ✓ OK
+    // sagaContext.sagaId = 'new-id'  // ✗ Error: Cannot assign to 'sagaId' because it is a read-only property
+    
     return { orderId: data.orderId, processed: true }
   })
   .withName("processOrder")
   .end()
 ```
+
+## Security & Safety Benefits
+
+The `SagaContext` interface provides several safety guarantees:
+
+1. **Immutability**: All properties are `readonly`, preventing accidental modifications
+2. **Encapsulation**: Callbacks cannot access internal saga methods or state
+3. **Serializable**: Contains only primitive values that can be safely logged or transmitted
+4. **Type-safe**: TypeScript enforces correct usage at compile time
+5. **No Side Effects**: Middleware cannot call saga methods like `startTask()` or `endTask()`
+
+### Why This Matters
+
+Previously, if middleware had access to the full `Saga` instance, it could potentially:
+- Call methods that modify saga state (e.g., `saga.startTask()`)
+- Access internal implementation details
+- Create race conditions or inconsistent state
+- Break saga orchestration logic
+
+Now with `SagaContext`, callbacks and middleware can only:
+- Read saga metadata (ID, parent information)
+- Log and track saga execution
+- Make routing decisions based on hierarchy
+- Safely pass context to external systems
+
+This design follows the **principle of least privilege** - callbacks get exactly the information they need, nothing more.

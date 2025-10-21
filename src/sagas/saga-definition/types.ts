@@ -1,3 +1,13 @@
+/**
+ * Read-only context information about the saga execution.
+ * This provides safe access to saga metadata without exposing the full saga instance.
+ */
+export interface SagaContext {
+  readonly sagaId: string
+  readonly parentSagaId: string | null
+  readonly parentTaskId: string | null
+}
+
 export type StepInvokeCallback<
   Data = unknown,
   PrevResultData = unknown,
@@ -7,9 +17,7 @@ export type StepInvokeCallback<
   data: Data,
   prevResult: PrevResultData,
   middlewareData: MiddlewareData,
-  sagaId: string,
-  parentSagaId: string | null,
-  parentTaskId: string | null
+  sagaContext: SagaContext
 ) => Promise<ResultData> | ResultData
 
 export type StepCompensateCallback<
@@ -32,7 +40,5 @@ export type StepMiddlewareCallback<
   data: Data,
   prevResult: PrevResultData,
   middlewareData: MiddlewareData,
-  sagaId: string,
-  parentSagaId: string | null,
-  parentTaskId: string | null
+  sagaContext: SagaContext
 ) => Promise<void | boolean | ResultData> | void | boolean | ResultData

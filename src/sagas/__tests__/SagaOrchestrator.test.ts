@@ -149,8 +149,8 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware1).toHaveBeenCalledWith("mock data", null, {}, "test id", null, null)
-    expect(middleware2).toHaveBeenCalledWith("mock data", null, {}, "test id", null, null)
+    expect(middleware1).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
+    expect(middleware2).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
     expect(step1Invoke).toHaveBeenCalled()
     expect(step2Invoke).toHaveBeenCalled()
     expect(step3Invoke).toHaveBeenCalled()
@@ -268,8 +268,8 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware).toHaveBeenCalledWith("mock data", "step1 result", {}, "test id", null, null)
-    expect(step2Invoke).toHaveBeenCalledWith("mock data", "step1 result", {}, "test id", null, null)
+    expect(middleware).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
+    expect(step2Invoke).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
   })
 
   /**
@@ -316,9 +316,7 @@ describe("SagaOrchestrator", () => {
         key1: "value1",
         key2: "value2",
       },
-      "test id",
-      null,
-      null
+      { sagaId: "test id", parentSagaId: null, parentTaskId: null }
     )
   })
 })
