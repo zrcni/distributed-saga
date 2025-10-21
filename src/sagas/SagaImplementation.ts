@@ -9,6 +9,14 @@ export abstract class SagaImplementation {
     return `${this.sagaName || this.name}-${runId}`
   }
 
+  id(runId: string): string {
+    return (this.constructor as typeof SagaImplementation).id(runId)
+  }
+
+  get tasks() {
+    return (this.constructor as typeof SagaImplementation).tasks
+  }
+
   getSagaDefinition() {
     return this.sagaDefinition
   }

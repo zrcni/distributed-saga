@@ -106,6 +106,145 @@ describe("SagaImplementation", () => {
         expect(sagaId).toBe("test-saga-order-2024-01-15")
       })
     })
+
+    describe("instance id() method", () => {
+      it("should generate saga id from instance using the class sagaName", () => {
+        const saga = new TestSaga()
+        const runId = "run-123"
+        const sagaId = saga.id(runId)
+
+        expect(sagaId).toBe("test-saga-run-123")
+      })
+
+      it("should produce same result as static id() method", () => {
+        const saga = new TestSaga()
+        const runId = "run-456"
+        
+        const staticId = TestSaga.id(runId)
+        const instanceId = saga.id(runId)
+
+        expect(instanceId).toBe(staticId)
+        expect(instanceId).toBe("test-saga-run-456")
+      })
+
+      it("should work with different runIds on the same instance", () => {
+        const saga = new TestSaga()
+        
+        const id1 = saga.id("run-001")
+        const id2 = saga.id("run-002")
+        const id3 = saga.id("run-003")
+
+        expect(id1).toBe("test-saga-run-001")
+        expect(id2).toBe("test-saga-run-002")
+        expect(id3).toBe("test-saga-run-003")
+        expect(id1).not.toBe(id2)
+        expect(id2).not.toBe(id3)
+      })
+
+      it("should work consistently across multiple instances", () => {
+        const saga1 = new TestSaga()
+        const saga2 = new TestSaga()
+        const runId = "run-shared"
+
+        const id1 = saga1.id(runId)
+        const id2 = saga2.id(runId)
+
+        expect(id1).toBe(id2)
+        expect(id1).toBe("test-saga-run-shared")
+      })
+
+      it("should handle UUID runIds from instance", () => {
+        const saga = new TestSaga()
+        const uuid = "550e8400-e29b-41d4-a716-446655440000"
+        const sagaId = saga.id(uuid)
+        
+        expect(sagaId).toBe(`test-saga-${uuid}`)
+      })
+
+      it("should handle numeric runIds from instance", () => {
+        const saga = new TestSaga()
+        const sagaId = saga.id("12345")
+        
+        expect(sagaId).toBe("test-saga-12345")
+      })
+
+      it("should handle empty string runId", () => {
+        const saga = new TestSaga()
+        const sagaId = saga.id("")
+        
+        expect(sagaId).toBe("test-saga-")
+      })
+    })
+
+    describe("instance tasks getter", () => {
+      it("should return tasks from the class", () => {
+        const saga = new TestSaga()
+        const tasks = saga.tasks
+
+        expect(tasks).toEqual({
+          STEP_ONE: "stepOne",
+          STEP_TWO: "stepTwo",
+          STEP_THREE: "stepThree",
+        })
+      })
+
+      it("should return the same tasks object as the static property", () => {
+        const saga = new TestSaga()
+        const instanceTasks = saga.tasks
+        const staticTasks = TestSaga["tasks"]
+
+        expect(instanceTasks).toBe(staticTasks)
+        expect(instanceTasks).toEqual(staticTasks)
+      })
+
+      it("should be consistent across multiple instances", () => {
+        const saga1 = new TestSaga()
+        const saga2 = new TestSaga()
+
+        const tasks1 = saga1.tasks
+        const tasks2 = saga2.tasks
+
+        expect(tasks1).toBe(tasks2)
+        expect(tasks1).toEqual(tasks2)
+      })
+
+      it("should allow accessing task names via instance", () => {
+        const saga = new TestSaga()
+        
+        expect(saga.tasks.STEP_ONE).toBe("stepOne")
+        expect(saga.tasks.STEP_TWO).toBe("stepTwo")
+        expect(saga.tasks.STEP_THREE).toBe("stepThree")
+      })
+
+      it("should have all expected task keys", () => {
+        const saga = new TestSaga()
+        const taskKeys = Object.keys(saga.tasks)
+
+        expect(taskKeys).toContain("STEP_ONE")
+        expect(taskKeys).toContain("STEP_TWO")
+        expect(taskKeys).toContain("STEP_THREE")
+        expect(taskKeys).toHaveLength(3)
+      })
+
+      it("should return tasks object that can be used in saga definition", () => {
+        const saga = new TestSaga()
+        const definition = saga.getSagaDefinition()
+        
+        const stepOne = definition.steps.find(
+          (step) => step.taskName === saga.tasks.STEP_ONE
+        )
+        const stepTwo = definition.steps.find(
+          (step) => step.taskName === saga.tasks.STEP_TWO
+        )
+        const stepThree = definition.steps.find(
+          (step) => step.taskName === saga.tasks.STEP_THREE
+        )
+
+        expect(stepOne).toBeDefined()
+        expect(stepTwo).toBeDefined()
+        expect(stepThree).toBeDefined()
+      })
+    })
   })
 
   describe("multiple implementations", () => {
@@ -193,6 +332,59 @@ describe("SagaImplementation", () => {
 
       expect(orderId).toBe("order-saga-order-001")
       expect(shippingId).toBe("shipping-saga-ship-001")
+    })
+
+    it("should generate different saga ids from instances", () => {
+      const orderSaga = new OrderSaga()
+      const shippingSaga = new ShippingSaga()
+
+      const orderId = orderSaga.id("order-001")
+      const shippingId = shippingSaga.id("ship-001")
+
+      expect(orderId).toBe("order-saga-order-001")
+      expect(shippingId).toBe("shipping-saga-ship-001")
+      expect(orderId).not.toBe(shippingId)
+    })
+
+    it("should allow accessing different tasks from instances", () => {
+      const orderSaga = new OrderSaga()
+      const shippingSaga = new ShippingSaga()
+
+      expect(orderSaga.tasks.VALIDATE_ORDER).toBe("validateOrder")
+      expect(orderSaga.tasks.PROCESS_PAYMENT).toBe("processPayment")
+      expect(orderSaga.tasks.RESERVE_INVENTORY).toBe("reserveInventory")
+
+      expect(shippingSaga.tasks.CREATE_SHIPMENT).toBe("createShipment")
+      expect(shippingSaga.tasks.ASSIGN_CARRIER).toBe("assignCarrier")
+      expect(shippingSaga.tasks.GENERATE_LABEL).toBe("generateLabel")
+    })
+
+    it("should have different tasks objects between implementations", () => {
+      const orderSaga = new OrderSaga()
+      const shippingSaga = new ShippingSaga()
+
+      expect(orderSaga.tasks).not.toBe(shippingSaga.tasks)
+      expect(orderSaga.tasks).not.toEqual(shippingSaga.tasks)
+    })
+
+    it("should use instance tasks in saga definitions", () => {
+      const orderSaga = new OrderSaga()
+      const shippingSaga = new ShippingSaga()
+
+      const orderDef = orderSaga.getSagaDefinition()
+      const shippingDef = shippingSaga.getSagaDefinition()
+
+      // Check order saga tasks
+      const validateOrder = orderDef.steps.find(
+        (step) => step.taskName === orderSaga.tasks.VALIDATE_ORDER
+      )
+      expect(validateOrder).toBeDefined()
+
+      // Check shipping saga tasks
+      const createShipment = shippingDef.steps.find(
+        (step) => step.taskName === shippingSaga.tasks.CREATE_SHIPMENT
+      )
+      expect(createShipment).toBeDefined()
     })
 
     it("should have different saga definitions", () => {
@@ -324,6 +516,53 @@ describe("SagaImplementation", () => {
       const sagaId = SpecialCharSaga.id("run-001")
       expect(sagaId).toBe("order-processing-v2.1-run-001")
     })
+
+    it("should handle saga with special characters in sagaName from instance", () => {
+      class SpecialCharSaga extends SagaImplementation {
+        protected static sagaName = "order-processing-v2.1"
+        protected static tasks = {
+          PROCESS: "process",
+        }
+
+        protected sagaDefinition: SagaDefinition
+
+        constructor() {
+          super()
+          this.sagaDefinition = SagaBuilder.start()
+            .invoke(async () => ({ done: true }))
+            .withName(SpecialCharSaga.tasks.PROCESS)
+            .end()
+        }
+      }
+
+      const saga = new SpecialCharSaga()
+      const sagaId = saga.id("run-001")
+      expect(sagaId).toBe("order-processing-v2.1-run-001")
+    })
+
+    it("should access tasks from instance with special characters", () => {
+      class SpecialTaskSaga extends SagaImplementation {
+        protected static sagaName = "special-task-saga"
+        protected static tasks = {
+          TASK_WITH_UNDERSCORE: "task_with_underscore",
+          "TASK-WITH-DASH": "task-with-dash",
+        }
+
+        protected sagaDefinition: SagaDefinition
+
+        constructor() {
+          super()
+          this.sagaDefinition = SagaBuilder.start()
+            .invoke(async () => ({ done: true }))
+            .withName(SpecialTaskSaga.tasks.TASK_WITH_UNDERSCORE)
+            .end()
+        }
+      }
+
+      const saga = new SpecialTaskSaga()
+      expect(saga.tasks.TASK_WITH_UNDERSCORE).toBe("task_with_underscore")
+      expect(saga.tasks["TASK-WITH-DASH"]).toBe("task-with-dash")
+    })
   })
 
   describe("inheritance chain", () => {
@@ -391,6 +630,65 @@ describe("SagaImplementation", () => {
 
       expect(baseId).toBe("base-saga-run-001")
       expect(extendedId).toBe("extended-saga-run-001")
+    })
+
+    it("should generate different ids from instances based on subclass sagaName", () => {
+      const baseSaga = new BaseSaga()
+      const extendedSaga = new ExtendedSaga()
+
+      const baseId = baseSaga.id("run-001")
+      const extendedId = extendedSaga.id("run-001")
+
+      expect(baseId).toBe("base-saga-run-001")
+      expect(extendedId).toBe("extended-saga-run-001")
+      expect(baseId).not.toBe(extendedId)
+    })
+
+    it("should access correct tasks from base and extended instances", () => {
+      const baseSaga = new BaseSaga()
+      const extendedSaga = new ExtendedSaga()
+
+      expect(baseSaga.tasks.BASE_TASK).toBe("baseTask")
+      expect(baseSaga.tasks).not.toHaveProperty("EXTENDED_TASK")
+
+      expect(extendedSaga.tasks.BASE_TASK).toBe("baseTask")
+      expect(extendedSaga.tasks.EXTENDED_TASK).toBe("extendedTask")
+    })
+
+    it("should maintain different tasks objects in inheritance chain", () => {
+      const baseSaga = new BaseSaga()
+      const extendedSaga = new ExtendedSaga()
+
+      const baseTasks = baseSaga.tasks
+      const extendedTasks = extendedSaga.tasks
+
+      expect(baseTasks).not.toBe(extendedTasks)
+      expect(Object.keys(baseTasks)).toHaveLength(1)
+      expect(Object.keys(extendedTasks)).toHaveLength(2)
+    })
+
+    it("should use correct tasks in definitions for inherited sagas", () => {
+      const baseSaga = new BaseSaga()
+      const extendedSaga = new ExtendedSaga()
+
+      const baseDef = baseSaga.getSagaDefinition()
+      const extendedDef = extendedSaga.getSagaDefinition()
+
+      // Base saga should have only BASE_TASK
+      const baseTaskInBase = baseDef.steps.find(
+        (step) => step.taskName === baseSaga.tasks.BASE_TASK
+      )
+      expect(baseTaskInBase).toBeDefined()
+
+      // Extended saga should have both tasks
+      const baseTaskInExtended = extendedDef.steps.find(
+        (step) => step.taskName === extendedSaga.tasks.BASE_TASK
+      )
+      const extendedTask = extendedDef.steps.find(
+        (step) => step.taskName === extendedSaga.tasks.EXTENDED_TASK
+      )
+      expect(baseTaskInExtended).toBeDefined()
+      expect(extendedTask).toBeDefined()
     })
   })
 
@@ -587,6 +885,231 @@ describe("SagaImplementation", () => {
       expect(def3).toBeInstanceOf(SagaDefinition)
       expect(def5).toBeInstanceOf(SagaDefinition)
       expect(def3.steps.length).toBeLessThan(def5.steps.length)
+    })
+  })
+
+  describe("instance-level id() and tasks behavior", () => {
+    class TestSagaForInstance extends SagaImplementation {
+      protected static sagaName = "instance-test-saga"
+      protected static tasks = {
+        TASK_A: "taskA",
+        TASK_B: "taskB",
+      }
+
+      protected sagaDefinition: SagaDefinition
+
+      constructor() {
+        super()
+        this.sagaDefinition = SagaBuilder.start()
+          .invoke(async () => ({ a: true }))
+          .withName(TestSagaForInstance.tasks.TASK_A)
+          .next()
+          .invoke(async () => ({ b: true }))
+          .withName(TestSagaForInstance.tasks.TASK_B)
+          .end()
+      }
+    }
+
+    describe("instance id() method behavior", () => {
+      it("should delegate to static id() method", () => {
+        const saga = new TestSagaForInstance()
+        const runId = "test-123"
+
+        const staticResult = TestSagaForInstance.id(runId)
+        const instanceResult = saga.id(runId)
+
+        expect(instanceResult).toBe(staticResult)
+      })
+
+      it("should work with different instances independently", () => {
+        const saga1 = new TestSagaForInstance()
+        const saga2 = new TestSagaForInstance()
+
+        const id1 = saga1.id("run-1")
+        const id2 = saga2.id("run-2")
+
+        expect(id1).toBe("instance-test-saga-run-1")
+        expect(id2).toBe("instance-test-saga-run-2")
+      })
+
+      it("should not be affected by instance state", () => {
+        const saga = new TestSagaForInstance()
+
+        // Call id multiple times with different runIds
+        const id1 = saga.id("first")
+        const id2 = saga.id("second")
+        const id3 = saga.id("first") // Same runId as id1
+
+        expect(id1).toBe("instance-test-saga-first")
+        expect(id2).toBe("instance-test-saga-second")
+        expect(id3).toBe("instance-test-saga-first")
+        expect(id1).toBe(id3)
+      })
+
+      it("should handle runId with spaces", () => {
+        const saga = new TestSagaForInstance()
+        const id = saga.id("run with spaces")
+
+        expect(id).toBe("instance-test-saga-run with spaces")
+      })
+
+      it("should handle very long runIds", () => {
+        const saga = new TestSagaForInstance()
+        const longRunId = "a".repeat(1000)
+        const id = saga.id(longRunId)
+
+        expect(id).toBe(`instance-test-saga-${longRunId}`)
+        expect(id.length).toBe("instance-test-saga-".length + 1000)
+      })
+
+      it("should handle runId with special characters", () => {
+        const saga = new TestSagaForInstance()
+        
+        const id1 = saga.id("run@#$%^&*()")
+        const id2 = saga.id("run/with/slashes")
+        const id3 = saga.id("run:with:colons")
+
+        expect(id1).toBe("instance-test-saga-run@#$%^&*()")
+        expect(id2).toBe("instance-test-saga-run/with/slashes")
+        expect(id3).toBe("instance-test-saga-run:with:colons")
+      })
+    })
+
+    describe("instance tasks getter behavior", () => {
+      it("should return reference to static tasks object", () => {
+        const saga = new TestSagaForInstance()
+        const tasks = saga.tasks
+        const staticTasks = (TestSagaForInstance as any).tasks
+
+        // Should be the same reference
+        expect(tasks).toBe(staticTasks)
+      })
+
+      it("should be immutable from instance perspective", () => {
+        const saga = new TestSagaForInstance()
+        const tasks = saga.tasks
+
+        // Attempting to modify shouldn't affect other instances
+        // (though we can't prevent modification since it's a reference)
+        const tasksCopy = { ...tasks }
+        expect(tasksCopy).toEqual(tasks)
+      })
+
+      it("should work consistently across multiple calls", () => {
+        const saga = new TestSagaForInstance()
+
+        const tasks1 = saga.tasks
+        const tasks2 = saga.tasks
+        const tasks3 = saga.tasks
+
+        expect(tasks1).toBe(tasks2)
+        expect(tasks2).toBe(tasks3)
+      })
+
+      it("should have enumerable properties", () => {
+        const saga = new TestSagaForInstance()
+        const tasks = saga.tasks
+
+        const keys = Object.keys(tasks)
+        expect(keys).toContain("TASK_A")
+        expect(keys).toContain("TASK_B")
+      })
+
+      it("should allow destructuring", () => {
+        const saga = new TestSagaForInstance()
+        const { TASK_A, TASK_B } = saga.tasks
+
+        expect(TASK_A).toBe("taskA")
+        expect(TASK_B).toBe("taskB")
+      })
+
+      it("should support Object.values()", () => {
+        const saga = new TestSagaForInstance()
+        const taskValues = Object.values(saga.tasks)
+
+        expect(taskValues).toContain("taskA")
+        expect(taskValues).toContain("taskB")
+        expect(taskValues).toHaveLength(2)
+      })
+
+      it("should support Object.entries()", () => {
+        const saga = new TestSagaForInstance()
+        const taskEntries = Object.entries(saga.tasks)
+
+        expect(taskEntries).toContainEqual(["TASK_A", "taskA"])
+        expect(taskEntries).toContainEqual(["TASK_B", "taskB"])
+        expect(taskEntries).toHaveLength(2)
+      })
+    })
+
+    describe("combined id() and tasks usage", () => {
+      it("should use tasks to build saga and id to identify it", () => {
+        const saga = new TestSagaForInstance()
+        const runId = "combined-test"
+
+        const sagaId = saga.id(runId)
+        const definition = saga.getSagaDefinition()
+
+        expect(sagaId).toBe("instance-test-saga-combined-test")
+
+        const taskAStep = definition.steps.find(
+          (step) => step.taskName === saga.tasks.TASK_A
+        )
+        const taskBStep = definition.steps.find(
+          (step) => step.taskName === saga.tasks.TASK_B
+        )
+
+        expect(taskAStep).toBeDefined()
+        expect(taskBStep).toBeDefined()
+      })
+
+      it("should work in a typical saga execution setup", () => {
+        const saga = new TestSagaForInstance()
+        const orderId = "order-12345"
+
+        // Generate saga ID
+        const sagaId = saga.id(orderId)
+        expect(sagaId).toBe("instance-test-saga-order-12345")
+
+        // Get tasks for execution
+        const tasks = saga.tasks
+        expect(tasks.TASK_A).toBe("taskA")
+        expect(tasks.TASK_B).toBe("taskB")
+
+        // Get definition for orchestrator
+        const definition = saga.getSagaDefinition()
+        expect(definition).toBeInstanceOf(SagaDefinition)
+        expect(definition.steps.length).toBeGreaterThan(0)
+      })
+    })
+
+    describe("edge cases with no sagaName", () => {
+      it("should use class name when sagaName is not set", () => {
+        class NoNameSaga extends SagaImplementation {
+          // No static sagaName defined
+          protected static tasks = {
+            TASK: "task",
+          }
+
+          protected sagaDefinition: SagaDefinition
+
+          constructor() {
+            super()
+            this.sagaDefinition = SagaBuilder.start()
+              .invoke(async () => ({ done: true }))
+              .withName(NoNameSaga.tasks.TASK)
+              .end()
+          }
+        }
+
+        const staticId = NoNameSaga.id("run-1")
+        expect(staticId).toBe("NoNameSaga-run-1")
+
+        const saga = new NoNameSaga()
+        const instanceId = saga.id("run-1")
+        expect(instanceId).toBe("NoNameSaga-run-1")
+        expect(instanceId).toBe(staticId)
+      })
     })
   })
 })
