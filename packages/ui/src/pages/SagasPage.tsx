@@ -13,6 +13,7 @@ export const SagasPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [showOnlyRootSagas, setShowOnlyRootSagas] = useState(true);
+  const [hideCompletedSagas, setHideCompletedSagas] = useState(true);
 
   const toggleTask = (sagaId: string, taskName: string) => {
     const key = `${sagaId}-${taskName}`;
@@ -83,13 +84,19 @@ export const SagasPage: React.FC = () => {
     );
   }
 
-  // Filter sagas based on toggle
-  const displayedSagas = showOnlyRootSagas 
+  // Filter sagas based on toggles
+  let displayedSagas = showOnlyRootSagas 
     ? sagas.filter(saga => !saga.parentSagaId)
     : sagas;
+  
+  // Apply completed sagas filter
+  if (hideCompletedSagas) {
+    displayedSagas = displayedSagas.filter(saga => saga.status !== 'completed');
+  }
 
   const rootSagasCount = sagas.filter(saga => !saga.parentSagaId).length;
   const totalSagasCount = sagas.length;
+  const completedSagasCount = sagas.filter(saga => saga.status === 'completed').length;
 
   return (
     <div className="container">
@@ -109,11 +116,22 @@ export const SagasPage: React.FC = () => {
             />
             <span>Show only root sagas</span>
           </label>
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={hideCompletedSagas}
+              onChange={(e) => setHideCompletedSagas(e.target.checked)}
+            />
+            <span>Hide completed sagas</span>
+          </label>
           <span className="saga-count">
             {showOnlyRootSagas 
               ? `${rootSagasCount} root saga${rootSagasCount !== 1 ? 's' : ''}`
               : `${totalSagasCount} total saga${totalSagasCount !== 1 ? 's' : ''} (${rootSagasCount} root)`
             }
+            {completedSagasCount > 0 && (
+              <span className="completed-count"> • {completedSagasCount} completed</span>
+            )}
           </span>
         </div>
       </div>

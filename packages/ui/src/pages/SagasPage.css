@@ -68,6 +68,11 @@
   white-space: nowrap;
 }
 
+.saga-count .completed-count {
+  color: #28a745;
+  font-weight: 700;
+}
+
 .sagas-list {
   display: flex;
   flex-direction: column;
