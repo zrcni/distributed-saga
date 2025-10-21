@@ -20,13 +20,59 @@
 .header-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
   gap: 20px;
 }
 
+.header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .header-row h2 {
   margin: 0;
+}
+
+.selected-saga-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--primary-color);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+}
+
+.clear-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.clear-filter-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
 }
 
 .view-toggle {
@@ -55,6 +101,16 @@
   cursor: pointer;
   width: 16px;
   height: 16px;
+}
+
+.toggle-label input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.toggle-label:has(input[type="checkbox"]:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .saga-count {
@@ -94,6 +150,12 @@
   background: linear-gradient(to right, rgba(13, 110, 253, 0.02), var(--card-bg));
 }
 
+/* Selected saga highlighting */
+.saga-card.selected-saga {
+  border: 3px solid #ffc107;
+  box-shadow: 0 0 15px rgba(255, 193, 7, 0.3), 0 4px 8px rgba(0,0,0,0.15);
+}
+
 /* Highlight animation for parent saga when clicked */
 .saga-card.highlight-parent {
   animation: highlight-pulse 2s ease;
@@ -121,6 +183,19 @@
 
 .saga-info {
   flex: 1;
+  padding: 8px;
+  margin: -8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.saga-info:hover {
+  background: rgba(13, 110, 253, 0.05);
+  transform: translateX(2px);
+}
+
+.saga-info:active {
+  background: rgba(13, 110, 253, 0.1);
 }
 
 .saga-id-label {
@@ -145,6 +220,18 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   box-shadow: 0 1px 3px rgba(13, 110, 253, 0.3);
+}
+
+.selected-badge {
+  background: #ffc107;
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(255, 193, 7, 0.3);
 }
 
 .parent-saga-link {

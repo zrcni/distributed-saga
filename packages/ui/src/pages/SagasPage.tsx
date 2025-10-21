@@ -14,6 +14,7 @@ export const SagasPage: React.FC = () => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [showOnlyRootSagas, setShowOnlyRootSagas] = useState(true);
   const [hideCompletedSagas, setHideCompletedSagas] = useState(true);
+  const [selectedSagaId, setSelectedSagaId] = useState<string | null>(null);
 
   const toggleTask = (sagaId: string, taskName: string) => {
     const key = `${sagaId}-${taskName}`;
@@ -30,6 +31,32 @@ export const SagasPage: React.FC = () => {
 
   const isTaskExpanded = (sagaId: string, taskName: string) => {
     return expandedTasks.has(`${sagaId}-${taskName}`);
+  };
+
+  // Helper function to get all descendant saga IDs (children, grandchildren, etc.)
+  const getDescendantSagaIds = (parentId: string): Set<string> => {
+    const descendants = new Set<string>();
+    const queue = [parentId];
+    
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      descendants.add(currentId);
+      
+      // Find all direct children of current saga
+      const children = sagas.filter(s => s.parentSagaId === currentId);
+      children.forEach(child => queue.push(child.sagaId));
+    }
+    
+    return descendants;
+  };
+
+  const handleSagaSelect = (sagaId: string) => {
+    if (selectedSagaId === sagaId) {
+      // Deselect if clicking the same saga
+      setSelectedSagaId(null);
+    } else {
+      setSelectedSagaId(sagaId);
+    }
   };
 
   useEffect(() => {
@@ -84,10 +111,19 @@ export const SagasPage: React.FC = () => {
     );
   }
 
-  // Filter sagas based on toggles
-  let displayedSagas = showOnlyRootSagas 
-    ? sagas.filter(saga => !saga.parentSagaId)
-    : sagas;
+  // Filter sagas based on toggles and selection
+  let displayedSagas = sagas;
+  
+  // If a saga is selected, show only that saga and its descendants
+  if (selectedSagaId) {
+    const descendantIds = getDescendantSagaIds(selectedSagaId);
+    displayedSagas = sagas.filter(saga => descendantIds.has(saga.sagaId));
+  } else {
+    // Otherwise apply the normal filters
+    displayedSagas = showOnlyRootSagas 
+      ? sagas.filter(saga => !saga.parentSagaId)
+      : sagas;
+  }
   
   // Apply completed sagas filter
   if (hideCompletedSagas) {
@@ -105,7 +141,23 @@ export const SagasPage: React.FC = () => {
       </button>
       
       <div className="header-row">
-        <h2>Sagas in {name}</h2>
+        <div className="header-title">
+          <h2>Sagas in {name}</h2>
+          {selectedSagaId && (
+            <div className="selected-saga-indicator">
+              <span className="filter-badge">
+                Filtered to: {selectedSagaId}
+              </span>
+              <button 
+                className="clear-filter-btn"
+                onClick={() => setSelectedSagaId(null)}
+                title="Clear filter"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
         
         <div className="view-toggle">
           <label className="toggle-label">
@@ -113,6 +165,7 @@ export const SagasPage: React.FC = () => {
               type="checkbox"
               checked={showOnlyRootSagas}
               onChange={(e) => setShowOnlyRootSagas(e.target.checked)}
+              disabled={!!selectedSagaId}
             />
             <span>Show only root sagas</span>
           </label>
@@ -125,7 +178,9 @@ export const SagasPage: React.FC = () => {
             <span>Hide completed sagas</span>
           </label>
           <span className="saga-count">
-            {showOnlyRootSagas 
+            {selectedSagaId 
+              ? `${displayedSagas.length} saga${displayedSagas.length !== 1 ? 's' : ''} (filtered)`
+              : showOnlyRootSagas 
               ? `${rootSagasCount} root saga${rootSagasCount !== 1 ? 's' : ''}`
               : `${totalSagasCount} total saga${totalSagasCount !== 1 ? 's' : ''} (${rootSagasCount} root)`
             }
@@ -144,14 +199,25 @@ export const SagasPage: React.FC = () => {
         <div className="sagas-list">
           {displayedSagas.map((saga) => {
             const isRootSaga = !saga.parentSagaId;
+            const isSelected = saga.sagaId === selectedSagaId;
             
             return (
-              <div key={saga.sagaId} className={`saga-card ${isRootSaga ? 'root-saga' : ''}`} id={`saga-${saga.sagaId}`}>
+              <div 
+                key={saga.sagaId} 
+                className={`saga-card ${isRootSaga ? 'root-saga' : ''} ${isSelected ? 'selected-saga' : ''}`} 
+                id={`saga-${saga.sagaId}`}
+              >
                 <div className="saga-header">
-                  <div className="saga-info">
+                  <div 
+                    className="saga-info" 
+                    onClick={() => handleSagaSelect(saga.sagaId)}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to filter to this saga and its children"
+                  >
                     <div className="saga-id-label">
                       Saga ID
                       {isRootSaga && <span className="root-saga-badge">Root Saga</span>}
+                      {isSelected && <span className="selected-badge">Selected</span>}
                     </div>
                     <div className="saga-id">{saga.sagaId}</div>
                     {saga.parentSagaId && (
@@ -162,6 +228,7 @@ export const SagasPage: React.FC = () => {
                           className="parent-saga-id"
                           onClick={(e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             const parentElement = document.getElementById(`saga-${saga.parentSagaId}`);
                             if (parentElement) {
                               parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
