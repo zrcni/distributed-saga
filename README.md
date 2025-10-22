@@ -1,6 +1,4 @@
-# TODO
-
-- add data to saga? I mean while it is being processed. Any data.
+NOT INTENDED FOR PRODUCTION USAGE
 
 # Distributed Sagas
 
