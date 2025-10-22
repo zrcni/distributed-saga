@@ -318,6 +318,142 @@ async function createNestedSagasExample() {
   console.log("  Total: 11 sagas with 3 levels of nesting")
 }
 
+// Create hanging sagas (running for more than 24 hours)
+async function createHangingSagasExample() {
+  console.log("\nCreating hanging sagas example...")
+
+  // Helper function to manipulate saga timestamp (for demonstration purposes)
+  const setOldTimestamp = (sagaId: string, daysAgo: number) => {
+    const log = coordinator.log as any // Access internal log
+    if (log.sagas && log.sagas[sagaId]) {
+      const oldDate = new Date()
+      oldDate.setDate(oldDate.getDate() - daysAgo)
+      log.sagas[sagaId].createdAt = oldDate
+      
+      // Also update the first message timestamp (StartSaga message)
+      if (log.sagas[sagaId].messages && log.sagas[sagaId].messages.length > 0) {
+        log.sagas[sagaId].messages[0].timestamp = oldDate
+      }
+    }
+  }
+
+  // Create hanging saga 1: Stuck in payment processing (3 days old)
+  const hanging1Result = await coordinator.createSaga("order-hanging-001", {
+    orderId: "order-hanging-001",
+    amount: 350,
+    customerId: "cust-999",
+  })
+
+  if (hanging1Result.isOk()) {
+    const saga = hanging1Result.data as Saga<any>
+    await saga.startTask("processPayment")
+    // Leave stuck at payment processing
+    setOldTimestamp("order-hanging-001", 3) // 3 days ago
+  }
+
+  // Create hanging saga 2: Stuck waiting for external service (2 days old)
+  const hanging2Result = await coordinator.createSaga("order-hanging-002", {
+    orderId: "order-hanging-002",
+    amount: 750,
+    customerId: "cust-888",
+  })
+
+  if (hanging2Result.isOk()) {
+    const saga = hanging2Result.data as Saga<any>
+    await saga.startTask("processPayment")
+    await saga.endTask("processPayment", { paymentId: "pay_delayed_001" })
+    await saga.startTask("reserveInventory")
+    // Stuck waiting for inventory service
+    setOldTimestamp("order-hanging-002", 2) // 2 days ago
+  }
+
+  // Create hanging saga 3: Long-running batch job (5 days old)
+  const hanging3Result = await coordinator.createSaga("batch-export-001", {
+    jobId: "batch-export-001",
+    recordCount: 1000000,
+    exportType: "full",
+  })
+
+  if (hanging3Result.isOk()) {
+    const saga = hanging3Result.data as Saga<any>
+    await saga.startTask("prepareExport")
+    await saga.endTask("prepareExport", { prepared: true })
+    await saga.startTask("exportData")
+    // Stuck in long-running export
+    setOldTimestamp("batch-export-001", 5) // 5 days ago
+  }
+
+  // Create hanging saga 4: With child sagas - Parent stuck (4 days old)
+  const hangingParentId = "migration-parent-001"
+  const hangingParentResult = await coordinator.createSaga(hangingParentId, {
+    migrationType: "database",
+    tables: 50,
+  })
+
+  if (hangingParentResult.isOk()) {
+    const parent = hangingParentResult.data as Saga<any>
+    await parent.startTask("planMigration")
+    await parent.endTask("planMigration", { planned: true })
+    await parent.startTask("executeMigration")
+    
+    // Create a few child sagas (some completed, some stuck)
+    for (let i = 1; i <= 3; i++) {
+      const childId = `${hangingParentId}-table-${i}`
+      const childResult = await coordinator.createSaga(
+        childId,
+        { tableName: `users_${i}`, rowCount: 10000 },
+        { parentSagaId: hangingParentId, parentTaskId: "executeMigration" }
+      )
+
+      if (childResult.isOk()) {
+        const child = childResult.data as Saga<any>
+        await child.startTask("backupTable")
+        await child.endTask("backupTable", { backedUp: true })
+        
+        if (i === 1) {
+          // First child completed
+          await child.startTask("migrateData")
+          await child.endTask("migrateData", { migrated: true })
+          await child.endSaga()
+        } else {
+          // Other children stuck at migration
+          await child.startTask("migrateData")
+          setOldTimestamp(childId, 4) // Same age as parent
+        }
+      }
+    }
+    
+    // Parent still waiting for children
+    setOldTimestamp(hangingParentId, 4) // 4 days ago
+  }
+
+  // Create hanging saga 5: Recently crossed 24h threshold (1.1 days old)
+  const hanging5Result = await coordinator.createSaga("order-hanging-003", {
+    orderId: "order-hanging-003",
+    amount: 150,
+    customerId: "cust-777",
+  })
+
+  if (hanging5Result.isOk()) {
+    const saga = hanging5Result.data as Saga<any>
+    await saga.startTask("processPayment")
+    await saga.endTask("processPayment", { paymentId: "pay_recent_001" })
+    await saga.startTask("reserveInventory")
+    await saga.endTask("reserveInventory", { reservationId: "res_recent_001" })
+    await saga.startTask("sendEmail")
+    // Stuck sending email just over 24 hours
+    setOldTimestamp("order-hanging-003", 1.1) // 1.1 days ago (26.4 hours)
+  }
+
+  console.log("✓ Created hanging sagas example:")
+  console.log("  - order-hanging-001: 3 days old (stuck at payment)")
+  console.log("  - order-hanging-002: 2 days old (stuck waiting for inventory)")
+  console.log("  - batch-export-001: 5 days old (long-running export)")
+  console.log("  - migration-parent-001: 4 days old (parent with stuck children)")
+  console.log("  - order-hanging-003: 26 hours old (just crossed threshold)")
+  console.log("  Total: 5 hanging sagas + 3 child migration sagas (2 hanging)")
+}
+
 // Setup Saga Board
 const serverAdapter = new ExpressAdapter()
 serverAdapter.setBasePath("/admin/sagas")
@@ -418,6 +554,23 @@ app.get("/", (req, res) => {
             content processing.
           </p>
         </div>
+        
+        <div class="feature">
+          <strong>Hanging Sagas (Long-Running) 🆕⚠️</strong>
+          <ul>
+            <li><strong>order-hanging-001</strong> - 3 days old, stuck at payment</li>
+            <li><strong>order-hanging-002</strong> - 2 days old, waiting for inventory</li>
+            <li><strong>batch-export-001</strong> - 5 days old, long-running export</li>
+            <li><strong>migration-parent-001</strong> - 4 days old with stuck child sagas</li>
+            <li><strong>order-hanging-003</strong> - 26 hours old, just crossed threshold</li>
+          </ul>
+          <p style="margin-top: 10px; color: #666; font-style: italic;">
+            Navigate to the <strong>Hanging Sagas</strong> tab in the dashboard to see 
+            sagas that have been running for more than 24 hours. This view helps identify 
+            stuck workflows, infinite loops, or sagas waiting for external services that 
+            may have failed.
+          </p>
+        </div>
       </body>
     </html>
   `)
@@ -428,6 +581,7 @@ async function start() {
   try {
     await createExampleSagas()
     await createNestedSagasExample()
+    await createHangingSagasExample()
 
     app.listen(port, () => {
       console.log(`\n🚀 Server running on http://localhost:${port}`)
@@ -435,7 +589,9 @@ async function start() {
       console.log("\nExample sagas have been created for demonstration.")
       console.log("- Regular sagas: order-001, order-002, order-003")
       console.log("- Nested sagas: crawl-example-com (parent) with 5 child sagas + 5 nested children")
-      console.log("  Total: 11 sagas demonstrating 3 levels of nesting\n")
+      console.log("  Total: 11 sagas demonstrating 3 levels of nesting")
+      console.log("- Hanging sagas: 5 root sagas + 2 child sagas (running > 24 hours)")
+      console.log("  Check the 'Hanging Sagas' tab in the dashboard!\n")
     })
   } catch (error) {
     console.error("Failed to start server:", error)

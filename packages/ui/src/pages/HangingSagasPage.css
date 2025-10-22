@@ -1,0 +1,88 @@
+.no-hanging-sagas {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.success-icon {
+  font-size: 72px;
+  color: #27ae60;
+  margin-bottom: 20px;
+}
+
+.no-hanging-sagas p {
+  font-size: 18px;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.no-hanging-sagas .subtitle {
+  font-size: 14px;
+  color: #666;
+}
+
+.saga-card.hanging {
+  border-left: 4px solid #e74c3c;
+  background: #fff5f5;
+}
+
+.saga-card.hanging:hover {
+  background: #ffe8e8;
+}
+
+.hanging-info {
+  margin: 10px 0;
+}
+
+.hanging-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #e74c3c;
+  color: white;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.saga-source {
+  margin-bottom: 8px;
+}
+
+.source-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #3498db;
+  color: white;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.count-number {
+  font-size: 32px;
+  font-weight: bold;
+  color: #e74c3c;
+  display: block;
+  line-height: 1;
+}
+
+.count-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.saga-count-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 20px;
+  background: #fff;
+  border: 2px solid #e74c3c;
+  border-radius: 8px;
+}

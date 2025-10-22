@@ -10,6 +10,18 @@
   margin: 0 auto;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-text {
+  flex: 1;
+}
+
 .header h1 {
   font-size: 28px;
   margin-bottom: 5px;
@@ -19,4 +31,38 @@
 .header p {
   color: #666;
   font-size: 14px;
+}
+
+.header-nav {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-link {
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #666;
+  background: transparent;
+  border: 1px solid #ddd;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  background: #f5f5f5;
+  color: #2c3e50;
+  border-color: #bbb;
+}
+
+.nav-link.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.nav-link.active:hover {
+  background: #2980b9;
+  border-color: #2980b9;
 }

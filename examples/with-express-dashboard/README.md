@@ -52,23 +52,50 @@ The `package.json` scripts use `-r tsconfig-paths/register` to enable path mappi
 
 ## 📊 What You'll See
 
-The example creates three sagas to demonstrate different states:
+The example creates multiple sagas to demonstrate different states and scenarios:
 
-### Saga 1: In Progress (Active)
+### Regular Sagas (Order Processing)
+
+#### Saga 1: In Progress (Active)
 - Payment processed ✅
 - Inventory reservation started but not completed 🔄
 - Demonstrates a saga that was interrupted (e.g., server crash)
 
-### Saga 2: Completed Successfully
+#### Saga 2: Completed Successfully
 - Payment processed ✅
 - Inventory reserved ✅
 - Confirmation email sent ✅
 - Saga completed successfully ✅
 
-### Saga 3: Aborted and Compensated
+#### Saga 3: Aborted and Compensated
 - Payment processed ✅
 - Saga aborted ❌
 - Payment refunded (compensated) ↩️
+
+### Nested Sagas (Web Crawler)
+
+Demonstrates parent-child saga hierarchies with 3 levels of nesting:
+- **Parent saga**: `crawl-example-com` - Coordinates webpage crawling
+- **5 child sagas**: Page crawlers showing different states (completed, active, aborted)
+- **5 nested child sagas**: Content processors (generateSummary → generateEmbeddings)
+
+Total: 11 sagas demonstrating deep parent-child relationships
+
+### Hanging Sagas (Long-Running) ⚠️
+
+**Navigate to the "Hanging Sagas" tab in the dashboard** to see sagas running > 24 hours:
+
+- **order-hanging-001**: 3 days old, stuck at payment processing
+- **order-hanging-002**: 2 days old, waiting for inventory service
+- **batch-export-001**: 5 days old, long-running export job
+- **migration-parent-001**: 4 days old with stuck child sagas (migration workflow)
+- **order-hanging-003**: 26 hours old, just crossed the 24-hour threshold
+
+**Use Cases**: 
+- Identify stuck workflows
+- Detect infinite loops or deadlocks
+- Find sagas waiting for failed external services
+- Monitor long-running batch operations
 
 ## 🔧 Code Structure
 
@@ -114,8 +141,11 @@ app.use('/admin/sagas', serverAdapter.getRouter());
 
 1. **View All Sagas**: See the list of all sagas on the main page
 2. **Check Task Status**: Click into individual sagas to see task progress
-3. **Abort a Saga**: Try aborting the active saga (Saga 1)
-4. **Auto-Refresh**: Notice the dashboard updates every 5 seconds
+3. **View Nested Sagas**: Explore parent-child saga relationships (3 levels deep!)
+4. **Monitor Hanging Sagas**: Click the "Hanging Sagas" tab to see long-running sagas (>24 hours)
+5. **Abort a Saga**: Try aborting an active or hanging saga
+6. **Delete Sagas**: Clean up completed or hanging sagas
+7. **Auto-Refresh**: Notice the dashboard updates automatically (every 5-10 seconds)
 
 ## 🔐 Adding Authentication
 

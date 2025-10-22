@@ -53,6 +53,10 @@ export class ExpressAdapter implements IServerAdapter {
       this.serveUI(req, res);
     });
 
+    this.router.get('/hanging', (req: Request, res: Response) => {
+      this.serveUI(req, res);
+    });
+
     this.router.get('/sources/:name', (req: Request, res: Response) => {
       this.serveUI(req, res);
     });
