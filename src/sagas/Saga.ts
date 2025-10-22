@@ -43,6 +43,7 @@ export class Saga<StartPayload = unknown> {
       getEndCompensatingTaskData: (taskId: string) => this.getEndCompensatingTaskData(taskId),
       isSagaAborted: () => this.isSagaAborted(),
       isSagaCompleted: () => this.isSagaCompleted(),
+      getSagaContext: <T = Record<string, any>>() => this.getSagaContext<T>(),
     }
   }
 
@@ -92,6 +93,16 @@ export class Saga<StartPayload = unknown> {
 
   async isSagaCompleted() {
     return this.state.isSagaCompleted()
+  }
+
+  async getSagaContext<T = Record<string, any>>(): Promise<T> {
+    return this.state.getSagaContext<T>()
+  }
+
+  async updateSagaContext(updates: Record<string, any>) {
+    return this.updateSagaState(
+      SagaMessage.createUpdateSagaContextMessage(this.sagaId, updates)
+    )
   }
 
   async endSaga() {

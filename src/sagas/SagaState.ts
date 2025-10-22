@@ -18,6 +18,7 @@ type TaskData = {
 export class SagaState<D = unknown> {
   sagaId: string
   job: D
+  sagaContext: Record<string, any> // Shared state accessible by all tasks
   taskData: Record<string, TaskData>
   taskStatus: Record<string, TaskStatus>
   sagaAborted: boolean
@@ -30,6 +31,7 @@ export class SagaState<D = unknown> {
   constructor(sagaId: string, job: D, parentSagaId: string | null = null, parentTaskId: string | null = null) {
     this.sagaId = sagaId
     this.job = job
+    this.sagaContext = {} // Initialize empty context
     this.taskData = {}
     this.taskStatus = {}
     this.sagaAborted = false
@@ -127,6 +129,18 @@ export class SagaState<D = unknown> {
 
   isSagaCompleted() {
     return this.sagaCompleted
+  }
+
+  getSagaContext<T = Record<string, any>>(): T {
+    return this.sagaContext as T
+  }
+
+  setSagaContext(context: Record<string, any>) {
+    this.sagaContext = { ...context }
+  }
+
+  updateSagaContext(updates: Record<string, any>) {
+    this.sagaContext = { ...this.sagaContext, ...updates }
   }
 
   static create<D>(sagaId: string, job: D, parentSagaId: string | null = null, parentTaskId: string | null = null): SagaState<D> {

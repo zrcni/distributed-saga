@@ -9,6 +9,22 @@ export interface SagaContext {
 }
 
 /**
+ * Writable saga context interface for updating shared saga state.
+ * Tasks can use this to read and update saga-level context that persists across tasks.
+ */
+export interface WritableSagaContext {
+  /**
+   * Get the current saga context
+   */
+  get<T = Record<string, any>>(): Promise<T>
+  
+  /**
+   * Update saga context with new values (merges with existing context)
+   */
+  update(updates: Record<string, any>): Promise<void>
+}
+
+/**
  * Read-only interface for accessing saga state and task data within callbacks.
  * This provides safe read access to the saga without allowing state modifications.
  */
@@ -26,6 +42,7 @@ export interface ReadOnlySaga {
   getEndCompensatingTaskData(taskId: string): Promise<unknown>
   isSagaAborted(): Promise<boolean>
   isSagaCompleted(): Promise<boolean>
+  getSagaContext<T = Record<string, any>>(): Promise<T>
 }
 
 export type StepInvokeCallback<
@@ -38,7 +55,8 @@ export type StepInvokeCallback<
   prevResult: PrevResultData,
   middlewareData: MiddlewareData,
   sagaContext: SagaContext,
-  saga: ReadOnlySaga
+  saga: ReadOnlySaga,
+  ctx: WritableSagaContext
 ) => Promise<ResultData> | ResultData
 
 export type StepCompensateCallback<
@@ -50,7 +68,8 @@ export type StepCompensateCallback<
   data: Data,
   taskData: TaskData,
   middlewareData: MiddlewareData,
-  saga: ReadOnlySaga
+  saga: ReadOnlySaga,
+  ctx: WritableSagaContext
 ) => Promise<ResultData> | ResultData
 
 export type StepMiddlewareCallback<
@@ -63,5 +82,6 @@ export type StepMiddlewareCallback<
   prevResult: PrevResultData,
   middlewareData: MiddlewareData,
   sagaContext: SagaContext,
-  saga: ReadOnlySaga
+  saga: ReadOnlySaga,
+  ctx: WritableSagaContext
 ) => Promise<void | boolean | ResultData> | void | boolean | ResultData

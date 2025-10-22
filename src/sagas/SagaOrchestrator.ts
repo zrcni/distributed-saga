@@ -2,6 +2,7 @@ import { EventEmitter } from "events"
 import { SagaDefinition } from "@/sagas/saga-definition/SagaDefinition"
 import { Saga } from "./Saga"
 import { SagaStep } from "./saga-definition/SagaStep"
+import { WritableSagaContext } from "./saga-definition/types"
 
 // Event types for SagaOrchestrator
 export interface SagaOrchestratorEvents {
@@ -59,6 +60,23 @@ export interface SagaOrchestrator {
 }
 
 export class SagaOrchestrator extends EventEmitter {
+  /**
+   * Create a writable saga context for task callbacks
+   */
+  private createWritableContext<StartPayload>(
+    saga: Saga<StartPayload>
+  ): WritableSagaContext {
+    return {
+      get: <T = Record<string, any>>() => saga.getSagaContext<T>(),
+      update: async (updates: Record<string, any>) => {
+        const result = await saga.updateSagaContext(updates)
+        if (result.isError()) {
+          throw result.data
+        }
+      },
+    }
+  }
+
   private async findCurrentStepIndex<StartPayload>(
     saga: Saga<StartPayload>,
     sagaDefinition: SagaDefinition
@@ -223,12 +241,14 @@ export class SagaOrchestrator extends EventEmitter {
         parentSagaId: saga.state.parentSagaId,
         parentTaskId: saga.state.parentTaskId,
       }
+      const writableContext = this.createWritableContext(saga)
       const result = await step.invokeCallback(
         data,
         prevStepResult,
         middlewareData,
         sagaContext,
-        saga.asReadOnly()
+        saga.asReadOnly(),
+        writableContext
       )
       const endTaskResult = await saga.endTask(step.taskName, result)
 
@@ -262,13 +282,15 @@ export class SagaOrchestrator extends EventEmitter {
   ): Promise<Record<string, unknown>> {
     let accumulatedData: Record<string, unknown> = {}
 
+    const writableContext = this.createWritableContext(saga)
     for (const middlewareCallback of step.middleware) {
       const result = await middlewareCallback(
         data,
         prevStepResult,
         accumulatedData,
         sagaContext,
-        saga.asReadOnly()
+        saga.asReadOnly(),
+        writableContext
       )
 
       // If middleware returns false explicitly, throw an error
@@ -317,12 +339,14 @@ export class SagaOrchestrator extends EventEmitter {
           taskName: step.taskName,
         })
 
+        const writableContext = this.createWritableContext(saga)
         try {
           const result = await step.compensateCallback(
             data,
             taskData,
             {},
-            saga.asReadOnly()
+            saga.asReadOnly(),
+            writableContext
           )
           this.emit("compensationSucceeded", {
             sagaId: saga.sagaId,

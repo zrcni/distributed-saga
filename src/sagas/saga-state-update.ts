@@ -67,6 +67,18 @@ export function validateSagaUpdate(
       break
     }
 
+    case SagaMessageType.UpdateSagaContext: {
+      if (state.isSagaCompleted()) {
+        return new InvalidSagaStateError(
+          "Cannot UpdateSagaContext after saga has already been completed",
+          {
+            sagaId: msg.sagaId,
+          }
+        )
+      }
+      break
+    }
+
     case SagaMessageType.StartTask: {
       if (state.isSagaCompleted()) {
         return new InvalidSagaStateError(
@@ -236,6 +248,13 @@ export function updateSagaState(
 
     case SagaMessageType.AbortSaga: {
       state.sagaAborted = true
+      break
+    }
+
+    case SagaMessageType.UpdateSagaContext: {
+      if (msg.data && typeof msg.data === 'object') {
+        state.updateSagaContext(msg.data as Record<string, any>)
+      }
       break
     }
 

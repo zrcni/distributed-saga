@@ -2,6 +2,7 @@ export enum SagaMessageType {
   StartSaga = "StartSaga",
   EndSaga = "EndSaga",
   AbortSaga = "AbortSaga",
+  UpdateSagaContext = "UpdateSagaContext",
   StartTask = "StartTask",
   EndTask = "EndTask",
   StartCompensatingTask = "StartCompensatingTask",
@@ -63,6 +64,17 @@ export class SagaMessage<Data = unknown> {
     return new SagaMessage({
       sagaId,
       msgType: SagaMessageType.AbortSaga,
+    })
+  }
+
+  static createUpdateSagaContextMessage(
+    sagaId: string,
+    contextUpdates: Record<string, any>
+  ) {
+    return new SagaMessage({
+      sagaId,
+      msgType: SagaMessageType.UpdateSagaContext,
+      data: contextUpdates,
     })
   }
 
