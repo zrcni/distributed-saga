@@ -12,31 +12,31 @@ describe("ReadOnlySaga in middleware callbacks", () => {
     const task2 = jest.fn(async () => task2Result)
     
     // Middleware should be able to read task1 data before task3 executes
-    const task3Middleware = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
+    const task3Middleware = jest.fn(async (data, context) => {
       // Verify saga is available
-      expect(saga).toBeDefined()
-      expect(saga.sagaId).toBe("test-saga-id")
-      expect(typeof saga.getEndTaskData).toBe("function")
+      expect(context.api).toBeDefined()
+      expect(context.api.sagaId).toBe("test-saga-id")
+      expect(typeof context.api.getEndTaskData).toBe("function")
       
       // Read task1 result
-      const task1Data = await saga.getEndTaskData("task1")
+      const task1Data = await context.api.getEndTaskData("task1")
       expect(task1Data).toEqual(task1Result)
       
       // Check task completion
-      const isTask1Completed = await saga.isTaskCompleted("task1")
+      const isTask1Completed = await context.api.isTaskCompleted("task1")
       expect(isTask1Completed).toBe(true)
       
       // Return data for the step to use
       return { validatedUserId: task1Data.userId }
     })
     
-    const task3 = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
+    const task3 = jest.fn(async (data, context) => {
       // Middleware should have added validatedUserId
-      expect(middlewareData.validatedUserId).toBe("123")
+      expect(context.middleware.validatedUserId).toBe("123")
       
       // Task3 can also read previous task data
-      const task1Data = await saga.getEndTaskData("task1")
-      const task2Data = await saga.getEndTaskData("task2")
+      const task1Data = await context.api.getEndTaskData("task1")
+      const task2Data = await context.api.getEndTaskData("task2")
       
       return {
         finalResult: {
@@ -86,22 +86,22 @@ describe("ReadOnlySaga in middleware callbacks", () => {
   it("should allow middleware to check task completion before proceeding", async () => {
     const prerequisiteTask = jest.fn(async () => ({ initialized: true }))
     
-    const validationMiddleware = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
+    const validationMiddleware = jest.fn(async (data, context) => {
       // Check if prerequisite task completed
-      const isPrerequisiteComplete = await saga.isTaskCompleted("prerequisite")
+      const isPrerequisiteComplete = await context.api.isTaskCompleted("prerequisite")
       
       if (!isPrerequisiteComplete) {
         throw new Error("Prerequisite task not completed")
       }
       
-      const prerequisiteData = await saga.getEndTaskData("prerequisite")
+      const prerequisiteData = await context.api.getEndTaskData("prerequisite")
       expect(prerequisiteData.initialized).toBe(true)
       
       return { validated: true }
     })
     
-    const mainTask = jest.fn(async (data, prevResult, middlewareData) => {
-      expect(middlewareData.validated).toBe(true)
+    const mainTask = jest.fn(async (data, context) => {
+      expect(context.middleware.validated).toBe(true)
       return { completed: true }
     })
     
@@ -130,24 +130,24 @@ describe("ReadOnlySaga in middleware callbacks", () => {
   it("should allow multiple middleware to access saga state", async () => {
     const setupTask = jest.fn(async () => ({ config: "value" }))
     
-    const middleware1 = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
-      const setupData = await saga.getEndTaskData("setup")
+    const middleware1 = jest.fn(async (data, context) => {
+      const setupData = await context.api.getEndTaskData("setup")
       return { fromMiddleware1: setupData.config }
     })
     
-    const middleware2 = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
+    const middleware2 = jest.fn(async (data, context) => {
       // Middleware2 can see data from middleware1
-      expect(middlewareData.fromMiddleware1).toBe("value")
+      expect(context.middleware.fromMiddleware1).toBe("value")
       
       // And can also read saga state
-      const setupData = await saga.getEndTaskData("setup")
+      const setupData = await context.api.getEndTaskData("setup")
       return { fromMiddleware2: setupData.config + "-processed" }
     })
     
-    const finalTask = jest.fn(async (data, prevResult, middlewareData) => {
+    const finalTask = jest.fn(async (data, context) => {
       // Final task receives accumulated middleware data
-      expect(middlewareData.fromMiddleware1).toBe("value")
-      expect(middlewareData.fromMiddleware2).toBe("value-processed")
+      expect(context.middleware.fromMiddleware1).toBe("value")
+      expect(context.middleware.fromMiddleware2).toBe("value-processed")
       return { success: true }
     })
     
@@ -178,16 +178,16 @@ describe("ReadOnlySaga in middleware callbacks", () => {
   it("should verify middleware cannot modify saga state", async () => {
     const task1 = jest.fn(async () => ({ result: "task1" }))
     
-    const middleware = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
+    const middleware = jest.fn(async (data, context) => {
       // Verify mutation methods are not available
-      expect(saga.startTask).toBeUndefined()
-      expect(saga.endTask).toBeUndefined()
-      expect(saga.abortSaga).toBeUndefined()
-      expect(saga.endSaga).toBeUndefined()
+      expect(context.api.startTask).toBeUndefined()
+      expect(context.api.endTask).toBeUndefined()
+      expect(context.api.abortSaga).toBeUndefined()
+      expect(context.api.endSaga).toBeUndefined()
       
       // Only read methods should be available
-      expect(typeof saga.getEndTaskData).toBe("function")
-      expect(typeof saga.isTaskCompleted).toBe("function")
+      expect(typeof context.api.getEndTaskData).toBe("function")
+      expect(typeof context.api.isTaskCompleted).toBe("function")
       
       return { checked: true }
     })

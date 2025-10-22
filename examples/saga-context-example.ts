@@ -32,7 +32,7 @@ interface OrderContext {
 
 export function createOrderProcessingSaga() {
   return SagaBuilder.start()
-    .invoke(async (data: OrderPayload, _prevResult, _middleware, _sagaContext, _saga, ctx) => {
+    .invoke(async (data: OrderPayload, context) => {
       console.log("Validating inventory for order:", data.orderId)
       
       // Calculate total amount
@@ -42,7 +42,7 @@ export function createOrderProcessingSaga() {
       )
       
       // Store in saga context for later tasks
-      await ctx.update({
+      await context.ctx.update({
         totalAmount,
         inventoryReserved: true,
         processedAt: new Date(),
@@ -51,16 +51,16 @@ export function createOrderProcessingSaga() {
       console.log(`Total amount: $${totalAmount}`)
       return { validated: true, totalAmount }
     })
-    .compensate(async (_data: OrderPayload, _taskData, _middleware, _saga, ctx) => {
+    .compensate(async (_data: OrderPayload, context) => {
       console.log("Releasing inventory reservation")
-      await ctx.update({ inventoryReserved: false })
+      await context.ctx.update({ inventoryReserved: false })
     })
     .withName("validateInventory")
     .next()
-    .invoke(async (data: OrderPayload, _prevResult, _middleware, _sagaContext, _saga, ctx) => {
+    .invoke(async (data: OrderPayload, context) => {
       // Read context to get total amount calculated by previous task
-      const context = await ctx.get<OrderContext>()
-      const totalAmount = context.totalAmount || 0
+      const sharedContext = await context.ctx.get<OrderContext>()
+      const totalAmount = sharedContext.totalAmount || 0
       
       console.log(`Processing payment of $${totalAmount} for order: ${data.orderId}`)
       
@@ -68,51 +68,51 @@ export function createOrderProcessingSaga() {
       const paymentId = `PAY-${Date.now()}`
       
       // Update context with payment ID for later reference
-      await ctx.update({ paymentId })
+      await context.ctx.update({ paymentId })
       
       return { paymentId, amount: totalAmount }
     })
-    .compensate(async (_data: OrderPayload, _taskData, _middleware, _saga, ctx) => {
-      const context = await ctx.get<OrderContext>()
-      console.log(`Refunding payment: ${context.paymentId}`)
-      await ctx.update({ paymentId: undefined })
+    .compensate(async (_data: OrderPayload, context) => {
+      const sharedContext = await context.ctx.get<OrderContext>()
+      console.log(`Refunding payment: ${sharedContext.paymentId}`)
+      await context.ctx.update({ paymentId: undefined })
     })
     .withName("processPayment")
     .next()
-    .invoke(async (data: OrderPayload, _prevResult, _middleware, _sagaContext, _saga, ctx) => {
+    .invoke(async (data: OrderPayload, context) => {
       // Read all accumulated context from previous tasks
-      const context = await ctx.get<OrderContext>()
+      const sharedContext = await context.ctx.get<OrderContext>()
       
       console.log(`Arranging shipping for order: ${data.orderId}`)
-      console.log(`  Payment ID: ${context.paymentId}`)
-      console.log(`  Total Amount: $${context.totalAmount}`)
+      console.log(`  Payment ID: ${sharedContext.paymentId}`)
+      console.log(`  Total Amount: $${sharedContext.totalAmount}`)
       
       // Simulate shipping arrangement
       const shippingId = `SHIP-${Date.now()}`
       
       // Update context with shipping ID
-      await ctx.update({ shippingId })
+      await context.ctx.update({ shippingId })
       
       return { shippingId, estimatedDelivery: "3-5 business days" }
     })
-    .compensate(async (_data: OrderPayload, _taskData, _middleware, _saga, ctx) => {
-      const context = await ctx.get<OrderContext>()
-      console.log(`Canceling shipping: ${context.shippingId}`)
-      await ctx.update({ shippingId: undefined })
+    .compensate(async (_data: OrderPayload, context) => {
+      const sharedContext = await context.ctx.get<OrderContext>()
+      console.log(`Canceling shipping: ${sharedContext.shippingId}`)
+      await context.ctx.update({ shippingId: undefined })
     })
     .withName("arrangeShipping")
     .next()
-    .invoke(async (data: OrderPayload, _prevResult, _middleware, _sagaContext, _saga, ctx) => {
+    .invoke(async (data: OrderPayload, context) => {
       // Read all accumulated context for final confirmation
-      const context = await ctx.get<OrderContext>()
+      const sharedContext = await context.ctx.get<OrderContext>()
       
       console.log("Sending order confirmation:")
       console.log(`  Order ID: ${data.orderId}`)
       console.log(`  Customer ID: ${data.customerId}`)
-      console.log(`  Total Amount: $${context.totalAmount}`)
-      console.log(`  Payment ID: ${context.paymentId}`)
-      console.log(`  Shipping ID: ${context.shippingId}`)
-      console.log(`  Processed At: ${context.processedAt}`)
+      console.log(`  Total Amount: $${sharedContext.totalAmount}`)
+      console.log(`  Payment ID: ${sharedContext.paymentId}`)
+      console.log(`  Shipping ID: ${sharedContext.shippingId}`)
+      console.log(`  Processed At: ${sharedContext.processedAt}`)
       
       return { confirmed: true }
     })

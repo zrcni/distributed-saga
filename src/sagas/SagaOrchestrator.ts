@@ -2,7 +2,7 @@ import { EventEmitter } from "events"
 import { SagaDefinition } from "@/sagas/saga-definition/SagaDefinition"
 import { Saga } from "./Saga"
 import { SagaStep } from "./saga-definition/SagaStep"
-import { WritableSagaContext } from "./saga-definition/types"
+import { WritableSagaContext, TaskContext, CompensationContext } from "./saga-definition/types"
 
 // Event types for SagaOrchestrator
 export interface SagaOrchestratorEvents {
@@ -74,6 +74,44 @@ export class SagaOrchestrator extends EventEmitter {
           throw result.data
         }
       },
+    }
+  }
+
+  /**
+   * Create a TaskContext object for invoke and middleware callbacks
+   */
+  private createTaskContext<StartPayload, PrevResultData, MiddlewareData>(
+    saga: Saga<StartPayload>,
+    prevResult: PrevResultData,
+    middlewareData: MiddlewareData
+  ): TaskContext<PrevResultData, MiddlewareData> {
+    return {
+      prev: prevResult,
+      middleware: middlewareData,
+      api: saga.asReadOnly(),
+      sagaId: saga.sagaId,
+      parentSagaId: saga.state.parentSagaId,
+      parentTaskId: saga.state.parentTaskId,
+      ctx: this.createWritableContext(saga),
+    }
+  }
+
+  /**
+   * Create a CompensationContext object for compensate callbacks
+   */
+  private createCompensationContext<StartPayload, TaskData, MiddlewareData>(
+    saga: Saga<StartPayload>,
+    taskData: TaskData,
+    middlewareData: MiddlewareData
+  ): CompensationContext<TaskData, MiddlewareData> {
+    return {
+      taskData,
+      middleware: middlewareData,
+      api: saga.asReadOnly(),
+      sagaId: saga.sagaId,
+      parentSagaId: saga.state.parentSagaId,
+      parentTaskId: saga.state.parentTaskId,
+      ctx: this.createWritableContext(saga),
     }
   }
 
@@ -236,20 +274,8 @@ export class SagaOrchestrator extends EventEmitter {
         })
       }
 
-      const sagaContext = {
-        sagaId: saga.sagaId,
-        parentSagaId: saga.state.parentSagaId,
-        parentTaskId: saga.state.parentTaskId,
-      }
-      const writableContext = this.createWritableContext(saga)
-      const result = await step.invokeCallback(
-        data,
-        prevStepResult,
-        middlewareData,
-        sagaContext,
-        saga.asReadOnly(),
-        writableContext
-      )
+      const taskContext = this.createTaskContext(saga, prevStepResult, middlewareData)
+      const result = await step.invokeCallback(data, taskContext)
       const endTaskResult = await saga.endTask(step.taskName, result)
 
       if (endTaskResult.isError()) {
@@ -282,16 +308,9 @@ export class SagaOrchestrator extends EventEmitter {
   ): Promise<Record<string, unknown>> {
     let accumulatedData: Record<string, unknown> = {}
 
-    const writableContext = this.createWritableContext(saga)
     for (const middlewareCallback of step.middleware) {
-      const result = await middlewareCallback(
-        data,
-        prevStepResult,
-        accumulatedData,
-        sagaContext,
-        saga.asReadOnly(),
-        writableContext
-      )
+      const taskContext = this.createTaskContext(saga, prevStepResult, accumulatedData)
+      const result = await middlewareCallback(data, taskContext)
 
       // If middleware returns false explicitly, throw an error
       if (result === false) {
@@ -339,15 +358,9 @@ export class SagaOrchestrator extends EventEmitter {
           taskName: step.taskName,
         })
 
-        const writableContext = this.createWritableContext(saga)
         try {
-          const result = await step.compensateCallback(
-            data,
-            taskData,
-            {},
-            saga.asReadOnly(),
-            writableContext
-          )
+          const compensationContext = this.createCompensationContext(saga, taskData, {})
+          const result = await step.compensateCallback(data, compensationContext)
           this.emit("compensationSucceeded", {
             sagaId: saga.sagaId,
             data,

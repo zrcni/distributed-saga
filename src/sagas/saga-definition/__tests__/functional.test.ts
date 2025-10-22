@@ -49,15 +49,15 @@ describe("Functional Saga API", () => {
       }
 
       const stepBuilder = step<StepData>("payment")
-        .invoke<StepResult>(async (data, prev) => {
+        .invoke<StepResult>(async (data, context) => {
           // TypeScript should enforce correct types here
           const userId: string = data.userId
           const amount: number = data.amount
           return { transactionId: `txn-${userId}-${amount}` }
         })
-        .compensate(async (data, result) => {
+        .compensate(async (data, context) => {
           // TypeScript should enforce correct types here
-          const txnId: string = result.transactionId
+          const txnId: string = context.taskData.transactionId
           console.log(`Refunding ${txnId}`)
         })
 
@@ -179,8 +179,8 @@ describe("Functional Saga API", () => {
 
     it("should execute a simple saga with functional API", async () => {
       const step1Invoke = jest.fn(async () => ({ value: 1 }))
-      const step2Invoke = jest.fn(async (data: any, prev: any) => ({
-        value: prev.value + 1,
+      const step2Invoke = jest.fn(async (data: any, context: any) => ({
+        value: context.prev.value + 1,
       }))
 
       const sagaDefinition = fromSteps([
@@ -202,12 +202,16 @@ describe("Functional Saga API", () => {
       expect(step1Invoke).toHaveBeenCalledTimes(1)
       expect(step2Invoke).toHaveBeenCalledTimes(1)
       expect(step2Invoke).toHaveBeenCalledWith(
-        { initial: true }, 
-        { value: 1 }, 
-        {},
-        { sagaId: "test-saga", parentSagaId: null, parentTaskId: null },
-        expect.objectContaining({ sagaId: "test-saga" }),
-        expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+        { initial: true },
+        expect.objectContaining({
+          prev: { value: 1 },
+          middleware: {},
+          sagaId: "test-saga",
+          parentSagaId: null,
+          parentTaskId: null,
+          api: expect.objectContaining({ sagaId: "test-saga" }),
+          ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+        })
       )
     })
 
@@ -255,14 +259,14 @@ describe("Functional Saga API", () => {
 
       const step1Invoke = jest.fn(async (data: OrderData) => step1Result)
       const step2Invoke = jest.fn(
-        async (data: OrderData, prev: typeof step1Result) => {
-          expect(prev.paymentId).toBe("pay-123")
+        async (data: OrderData, context) => {
+          expect(context.prev.paymentId).toBe("pay-123")
           return step2Result
         }
       )
       const step3Invoke = jest.fn(
-        async (data: OrderData, prev: typeof step2Result) => {
-          expect(prev.inventoryId).toBe("inv-456")
+        async (data: OrderData, context) => {
+          expect(context.prev.inventoryId).toBe("inv-456")
           return { completed: true }
         }
       )
@@ -283,9 +287,33 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
-      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
-      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
+      expect(step1Invoke).toHaveBeenCalledWith(orderData, expect.objectContaining({
+        prev: null,
+        middleware: {},
+        sagaId: "test-saga",
+        parentSagaId: null,
+        parentTaskId: null,
+        api: expect.objectContaining({ sagaId: "test-saga" }),
+        ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+      }))
+      expect(step2Invoke).toHaveBeenCalledWith(orderData, expect.objectContaining({
+        prev: step1Result,
+        middleware: {},
+        sagaId: "test-saga",
+        parentSagaId: null,
+        parentTaskId: null,
+        api: expect.objectContaining({ sagaId: "test-saga" }),
+        ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+      }))
+      expect(step3Invoke).toHaveBeenCalledWith(orderData, expect.objectContaining({
+        prev: step2Result,
+        middleware: {},
+        sagaId: "test-saga",
+        parentSagaId: null,
+        parentTaskId: null,
+        api: expect.objectContaining({ sagaId: "test-saga" }),
+        ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+      }))
     })
 
     it("should execute compensations in reverse order", async () => {
@@ -547,7 +575,15 @@ describe("Functional Saga API", () => {
       await orchestrator.run(saga, sagaDefinition)
 
       expect(middleware).toHaveBeenCalledTimes(1)
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, expect.objectContaining({
+        prev: null,
+        middleware: {},
+        sagaId: "test-saga",
+        parentSagaId: null,
+        parentTaskId: null,
+        api: expect.objectContaining({ sagaId: "test-saga" }),
+        ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+      }))
       expect(stepInvoke).toHaveBeenCalledTimes(1)
     })
 
@@ -642,8 +678,8 @@ describe("Functional Saga API", () => {
     it("should pass previous step result to middleware", async () => {
       const step1Result = { value: 100 }
       const step1Invoke = jest.fn(async () => step1Result)
-      const middleware = jest.fn(async (data, prevResult) => {
-        expect(prevResult).toEqual(step1Result)
+      const middleware = jest.fn(async (data, context) => {
+        expect(context.prev).toEqual(step1Result)
       })
       const step2Invoke = jest.fn(async () => ({ value: 2 }))
 
@@ -661,18 +697,26 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, expect.objectContaining({
+        prev: step1Result,
+        middleware: {},
+        sagaId: "test-saga",
+        parentSagaId: null,
+        parentTaskId: null,
+        api: expect.objectContaining({ sagaId: "test-saga" }),
+        ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+      }))
       expect(step2Invoke).toHaveBeenCalledTimes(1)
     })
 
     it("should accumulate and merge middleware data", async () => {
       const middleware1 = jest.fn(async () => ({ key1: "value1" }))
-      const middleware2 = jest.fn(async (data, prevResult, middlewareData) => {
-        expect(middlewareData).toEqual({ key1: "value1" })
+      const middleware2 = jest.fn(async (data, context) => {
+        expect(context.middleware).toEqual({ key1: "value1" })
         return { key2: "value2" }
       })
-      const stepInvoke = jest.fn(async (data, prevResult, middlewareData) => {
-        expect(middlewareData).toEqual({ key1: "value1", key2: "value2" })
+      const stepInvoke = jest.fn(async (data, context) => {
+        expect(context.middleware).toEqual({ key1: "value1", key2: "value2" })
         return { value: 1 }
       })
 

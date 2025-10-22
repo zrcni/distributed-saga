@@ -149,8 +149,24 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware1).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
-    expect(middleware2).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
+    expect(middleware1).toHaveBeenCalledWith("mock data", expect.objectContaining({
+      prev: null,
+      middleware: {},
+      sagaId: "test id",
+      parentSagaId: null,
+      parentTaskId: null,
+      api: expect.objectContaining({ sagaId: "test id" }),
+      ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+    }))
+    expect(middleware2).toHaveBeenCalledWith("mock data", expect.objectContaining({
+      prev: null,
+      middleware: {},
+      sagaId: "test id",
+      parentSagaId: null,
+      parentTaskId: null,
+      api: expect.objectContaining({ sagaId: "test id" }),
+      ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+    }))
     expect(step1Invoke).toHaveBeenCalled()
     expect(step2Invoke).toHaveBeenCalled()
     expect(step3Invoke).toHaveBeenCalled()
@@ -268,8 +284,24 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
-    expect(step2Invoke).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }), expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) }))
+    expect(middleware).toHaveBeenCalledWith("mock data", expect.objectContaining({
+      prev: "step1 result",
+      middleware: {},
+      sagaId: "test id",
+      parentSagaId: null,
+      parentTaskId: null,
+      api: expect.objectContaining({ sagaId: "test id" }),
+      ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+    }))
+    expect(step2Invoke).toHaveBeenCalledWith("mock data", expect.objectContaining({
+      prev: "step1 result",
+      middleware: {},
+      sagaId: "test id",
+      parentSagaId: null,
+      parentTaskId: null,
+      api: expect.objectContaining({ sagaId: "test id" }),
+      ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+    }))
   })
 
   /**
@@ -277,8 +309,8 @@ describe("SagaOrchestrator", () => {
    */
   it("accumulate and pass middleware data", async () => {
     const middleware1 = jest.fn(async () => ({ key1: "value1" }))
-    const middleware2 = jest.fn(async (data, prevResult, middlewareData) => {
-      expect(middlewareData).toEqual({ key1: "value1" })
+    const middleware2 = jest.fn(async (data, context) => {
+      expect(context.middleware).toEqual({ key1: "value1" })
       return { key2: "value2" }
     })
     const step2Invoke = jest.fn()
@@ -311,14 +343,18 @@ describe("SagaOrchestrator", () => {
     expect(middleware2).toHaveBeenCalled()
     expect(step2Invoke).toHaveBeenCalledWith(
       "mock data", 
-      null, 
-      {
-        key1: "value1",
-        key2: "value2",
-      },
-      { sagaId: "test id", parentSagaId: null, parentTaskId: null },
-      expect.objectContaining({ sagaId: "test id" }),
-      expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+      expect.objectContaining({
+        prev: null,
+        middleware: {
+          key1: "value1",
+          key2: "value2",
+        },
+        sagaId: "test id",
+        parentSagaId: null,
+        parentTaskId: null,
+        api: expect.objectContaining({ sagaId: "test id" }),
+        ctx: expect.objectContaining({ get: expect.any(Function), update: expect.any(Function) })
+      })
     )
   })
 })

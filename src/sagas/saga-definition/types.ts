@@ -1,6 +1,7 @@
 /**
  * Read-only context information about the saga execution.
  * This provides safe access to saga metadata without exposing the full saga instance.
+ * @deprecated Use TaskContext instead
  */
 export interface SagaContext {
   readonly sagaId: string
@@ -45,6 +46,60 @@ export interface ReadOnlySaga {
   getSagaContext<T = Record<string, any>>(): Promise<T>
 }
 
+/**
+ * Context object passed to task invoke and middleware callbacks.
+ * Consolidates all contextual information into a single parameter.
+ */
+export interface TaskContext<PrevResultData = unknown, MiddlewareData = Record<string, unknown>> {
+  /** Previous task's result data */
+  prev: PrevResultData
+  
+  /** Accumulated middleware data */
+  middleware: MiddlewareData
+  
+  /** Read-only saga API for accessing saga state */
+  api: ReadOnlySaga
+  
+  /** Current saga ID */
+  sagaId: string
+  
+  /** Parent saga ID if this is a nested saga */
+  parentSagaId: string | null
+  
+  /** Parent task ID if this is a nested saga */
+  parentTaskId: string | null
+  
+  /** Writable saga context for shared state */
+  ctx: WritableSagaContext
+}
+
+/**
+ * Context object passed to compensation callbacks.
+ * Similar to TaskContext but with taskData instead of prev.
+ */
+export interface CompensationContext<TaskData = unknown, MiddlewareData = Record<string, unknown>> {
+  /** Original task data from when the task was executed */
+  taskData: TaskData
+  
+  /** Accumulated middleware data */
+  middleware: MiddlewareData
+  
+  /** Read-only saga API for accessing saga state */
+  api: ReadOnlySaga
+  
+  /** Current saga ID */
+  sagaId: string
+  
+  /** Parent saga ID if this is a nested saga */
+  parentSagaId: string | null
+  
+  /** Parent task ID if this is a nested saga */
+  parentTaskId: string | null
+  
+  /** Writable saga context for shared state */
+  ctx: WritableSagaContext
+}
+
 export type StepInvokeCallback<
   Data = unknown,
   PrevResultData = unknown,
@@ -52,11 +107,7 @@ export type StepInvokeCallback<
   MiddlewareData = Record<string, unknown>
 > = (
   data: Data,
-  prevResult: PrevResultData,
-  middlewareData: MiddlewareData,
-  sagaContext: SagaContext,
-  saga: ReadOnlySaga,
-  ctx: WritableSagaContext
+  context: TaskContext<PrevResultData, MiddlewareData>
 ) => Promise<ResultData> | ResultData
 
 export type StepCompensateCallback<
@@ -66,10 +117,7 @@ export type StepCompensateCallback<
   MiddlewareData = Record<string, unknown>
 > = (
   data: Data,
-  taskData: TaskData,
-  middlewareData: MiddlewareData,
-  saga: ReadOnlySaga,
-  ctx: WritableSagaContext
+  context: CompensationContext<TaskData, MiddlewareData>
 ) => Promise<ResultData> | ResultData
 
 export type StepMiddlewareCallback<
@@ -79,9 +127,5 @@ export type StepMiddlewareCallback<
   ResultData = Record<string, unknown>
 > = (
   data: Data,
-  prevResult: PrevResultData,
-  middlewareData: MiddlewareData,
-  sagaContext: SagaContext,
-  saga: ReadOnlySaga,
-  ctx: WritableSagaContext
+  context: TaskContext<PrevResultData, MiddlewareData>
 ) => Promise<void | boolean | ResultData> | void | boolean | ResultData

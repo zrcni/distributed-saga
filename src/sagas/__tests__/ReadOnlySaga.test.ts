@@ -12,29 +12,29 @@ describe("ReadOnlySaga in callbacks", () => {
     const task2 = jest.fn(async () => task2Result)
     
     // Task 3 should be able to read results from task1 and task2
-    const task3 = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
+    const task3 = jest.fn(async (data, context) => {
       // Verify saga methods are available
-      expect(saga.sagaId).toBe("test-saga-id")
-      expect(typeof saga.getJob).toBe("function")
-      expect(typeof saga.getEndTaskData).toBe("function")
+      expect(context.api.sagaId).toBe("test-saga-id")
+      expect(typeof context.api.getJob).toBe("function")
+      expect(typeof context.api.getEndTaskData).toBe("function")
       
       // Read task 1 data
-      const task1Data = await saga.getEndTaskData("task1")
+      const task1Data = await context.api.getEndTaskData("task1")
       expect(task1Data).toEqual(task1Result)
       
       // Read task 2 data
-      const task2Data = await saga.getEndTaskData("task2")
+      const task2Data = await context.api.getEndTaskData("task2")
       expect(task2Data).toEqual(task2Result)
       
       // Check task completion status
-      const isTask1Completed = await saga.isTaskCompleted("task1")
+      const isTask1Completed = await context.api.isTaskCompleted("task1")
       expect(isTask1Completed).toBe(true)
       
-      const isTask2Completed = await saga.isTaskCompleted("task2")
+      const isTask2Completed = await context.api.isTaskCompleted("task2")
       expect(isTask2Completed).toBe(true)
       
       // Get all task IDs
-      const taskIds = await saga.getTaskIds()
+      const taskIds = await context.api.getTaskIds()
       expect(taskIds).toContain("task1")
       expect(taskIds).toContain("task2")
       
@@ -91,12 +91,12 @@ describe("ReadOnlySaga in callbacks", () => {
     })
     
     // Compensation should be able to read task1 data
-    const task1Compensate = jest.fn(async (data, taskData, middlewareData, saga) => {
+    const task1Compensate = jest.fn(async (data, context) => {
       // Verify saga is available
-      expect(typeof saga.getEndTaskData).toBe("function")
+      expect(typeof context.api.getEndTaskData).toBe("function")
       
       // Read task 1 result
-      const task1Data = await saga.getEndTaskData("task1")
+      const task1Data = await context.api.getEndTaskData("task1")
       expect(task1Data).toEqual(task1Result)
       
       // Use the data to properly compensate
@@ -130,18 +130,18 @@ describe("ReadOnlySaga in callbacks", () => {
   })
   
   it("should not allow callbacks to modify saga state", async () => {
-    const task1 = jest.fn(async (data, prevResult, middlewareData, sagaContext, saga) => {
+    const task1 = jest.fn(async (data, context) => {
       // Verify that mutation methods are not available
-      expect(saga.endTask).toBeUndefined()
-      expect(saga.startTask).toBeUndefined()
-      expect(saga.abortSaga).toBeUndefined()
-      expect(saga.endSaga).toBeUndefined()
-      expect(saga.logMessage).toBeUndefined()
+      expect(context.api.endTask).toBeUndefined()
+      expect(context.api.startTask).toBeUndefined()
+      expect(context.api.abortSaga).toBeUndefined()
+      expect(context.api.endSaga).toBeUndefined()
+      expect(context.api.logMessage).toBeUndefined()
       
       // Only read methods should be available
-      expect(typeof saga.getJob).toBe("function")
-      expect(typeof saga.getEndTaskData).toBe("function")
-      expect(typeof saga.isTaskCompleted).toBe("function")
+      expect(typeof context.api.getJob).toBe("function")
+      expect(typeof context.api.getEndTaskData).toBe("function")
+      expect(typeof context.api.isTaskCompleted).toBe("function")
       
       return { success: true }
     })

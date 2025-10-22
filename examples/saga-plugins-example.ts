@@ -58,8 +58,8 @@ export async function basicPluginExample() {
 
   // 5. Create and run a saga
   const sagaDefinition = SagaBuilder.start()
-    .invoke(async (data, prevResult, middlewareData, sagaContext) => {
-      console.log(`\n[TASK] Step 1 executing in saga ${sagaContext.sagaId}`)
+    .invoke(async (data, context) => {
+      console.log(`\n[TASK] Step 1 executing in saga ${context.sagaId}`)
       return { step: 1, result: "validated" }
     })
     .compensate(async () => {
@@ -67,8 +67,8 @@ export async function basicPluginExample() {
     })
     .withName("validateOrder")
     .next()
-    .invoke(async (data, prevResult, middlewareData, sagaContext) => {
-      console.log(`\n[TASK] Step 2 executing in saga ${sagaContext.sagaId}`)
+    .invoke(async (data, context) => {
+      console.log(`\n[TASK] Step 2 executing in saga ${context.sagaId}`)
       return { step: 2, result: "charged" }
     })
     .compensate(async () => {
@@ -76,8 +76,8 @@ export async function basicPluginExample() {
     })
     .withName("chargePayment")
     .next()
-    .invoke(async (data, prevResult, middlewareData, sagaContext) => {
-      console.log(`\n[TASK] Step 3 executing in saga ${sagaContext.sagaId}`)
+    .invoke(async (data, context) => {
+      console.log(`\n[TASK] Step 3 executing in saga ${context.sagaId}`)
       return { step: 3, result: "shipped" }
     })
     .compensate(async () => {
@@ -151,8 +151,8 @@ export async function ecommerceExample() {
 
   // Define the order processing saga
   const orderSaga = SagaBuilder.start()
-    .invoke(async (order: any, _prev, _mw, ctx) => {
-      console.log(`\n[ORDER] Validating order ${order.orderId} in saga ${ctx.sagaId}`)
+    .invoke(async (order: any, context) => {
+      console.log(`\n[ORDER] Validating order ${order.orderId} in saga ${context.sagaId}`)
       // Simulate validation
       await new Promise(resolve => setTimeout(resolve, 100))
       return { validated: true, inventoryReserved: false }
@@ -162,30 +162,30 @@ export async function ecommerceExample() {
     })
     .withName("validateOrder")
     .next()
-    .invoke(async (order: any, prev: any, _mw, ctx) => {
+    .invoke(async (order: any, context) => {
       console.log(`\n[INVENTORY] Reserving inventory for ${order.orderId}`)
       await new Promise(resolve => setTimeout(resolve, 150))
-      return { ...prev, inventoryReserved: true }
+      return { ...(context.prev as any), inventoryReserved: true }
     })
     .compensate(async () => {
       console.log("[COMPENSATION] Releasing inventory")
     })
     .withName("reserveInventory")
     .next()
-    .invoke(async (order: any, prev: any, _mw, ctx) => {
+    .invoke(async (order: any, context) => {
       console.log(`\n[PAYMENT] Charging payment for ${order.orderId}`)
       await new Promise(resolve => setTimeout(resolve, 200))
-      return { ...prev, paymentCharged: true, paymentId: "PAY-" + Date.now() }
+      return { ...(context.prev as any), paymentCharged: true, paymentId: "PAY-" + Date.now() }
     })
     .compensate(async () => {
       console.log("[COMPENSATION] Refunding payment")
     })
     .withName("chargePayment")
     .next()
-    .invoke(async (order: any, prev: any, _mw, ctx) => {
+    .invoke(async (order: any, context) => {
       console.log(`\n[SHIPPING] Creating shipment for ${order.orderId}`)
       await new Promise(resolve => setTimeout(resolve, 100))
-      return { ...prev, shipmentCreated: true, trackingNumber: "TRACK-" + Date.now() }
+      return { ...(context.prev as any), shipmentCreated: true, trackingNumber: "TRACK-" + Date.now() }
     })
     .compensate(async () => {
       console.log("[COMPENSATION] Canceling shipment")
