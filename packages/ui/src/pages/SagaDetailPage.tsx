@@ -181,6 +181,15 @@ export const SagaDetailPage: React.FC = () => {
         )}
       </div>
 
+      {saga.job && (
+        <div className="saga-data-section">
+          <h3>Saga Data</h3>
+          <div className="saga-data-content">
+            <pre>{JSON.stringify(saga.job, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+
       {saga.tasks && saga.tasks.length > 0 && (
         <div className="tasks-section">
           <h3>Tasks ({saga.tasks.length})</h3>

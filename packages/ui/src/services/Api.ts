@@ -3,6 +3,7 @@ export interface SagaInfo {
   status: string;
   createdAt?: string;
   updatedAt?: string;
+  job?: any;  // The initial data/payload that started the saga
   tasks?: Array<{
     taskName: string;
     status: string;
