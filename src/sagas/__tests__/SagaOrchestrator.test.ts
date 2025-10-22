@@ -149,8 +149,8 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware1).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
-    expect(middleware2).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
+    expect(middleware1).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }))
+    expect(middleware2).toHaveBeenCalledWith("mock data", null, {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }))
     expect(step1Invoke).toHaveBeenCalled()
     expect(step2Invoke).toHaveBeenCalled()
     expect(step3Invoke).toHaveBeenCalled()
@@ -268,8 +268,8 @@ describe("SagaOrchestrator", () => {
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
-    expect(middleware).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
-    expect(step2Invoke).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null })
+    expect(middleware).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }))
+    expect(step2Invoke).toHaveBeenCalledWith("mock data", "step1 result", {}, { sagaId: "test id", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test id" }))
   })
 
   /**
@@ -316,7 +316,8 @@ describe("SagaOrchestrator", () => {
         key1: "value1",
         key2: "value2",
       },
-      { sagaId: "test id", parentSagaId: null, parentTaskId: null }
+      { sagaId: "test id", parentSagaId: null, parentTaskId: null },
+      expect.objectContaining({ sagaId: "test id" })
     )
   })
 })

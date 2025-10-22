@@ -7,6 +7,7 @@ import { updateSagaState, validateSagaUpdate } from "./saga-state-update"
 import { Result, ResultError, ResultOk } from "@/Result"
 import { timeout } from "@/utils"
 import { SagaLog } from "./types"
+import { ReadOnlySaga } from "./saga-definition/types"
 
 export class Saga<StartPayload = unknown> {
   sagaId: string
@@ -20,6 +21,29 @@ export class Saga<StartPayload = unknown> {
     this.state = state
     this.log = log
     this.emitter = new EventEmitter()
+  }
+
+  /**
+   * Returns a read-only view of this saga instance.
+   * This is safe to pass to step callbacks to allow them to read task data
+   * without being able to modify the saga state.
+   */
+  asReadOnly(): ReadOnlySaga {
+    return {
+      sagaId: this.sagaId,
+      getJob: () => this.getJob(),
+      getTaskIds: () => this.getTaskIds(),
+      isTaskStarted: (taskId: string) => this.isTaskStarted(taskId),
+      getStartTaskData: (taskId: string) => this.getStartTaskData(taskId),
+      isTaskCompleted: (taskId: string) => this.isTaskCompleted(taskId),
+      getEndTaskData: <D = unknown>(taskId: string) => this.getEndTaskData<D>(taskId),
+      isCompensatingTaskStarted: (taskId: string) => this.isCompensatingTaskStarted(taskId),
+      getStartCompensatingTaskData: (taskId: string) => this.getStartCompensatingTaskData(taskId),
+      isCompensatingTaskCompleted: (taskId: string) => this.isCompensatingTaskCompleted(taskId),
+      getEndCompensatingTaskData: (taskId: string) => this.getEndCompensatingTaskData(taskId),
+      isSagaAborted: () => this.isSagaAborted(),
+      isSagaCompleted: () => this.isSagaCompleted(),
+    }
   }
 
   async getJob() {

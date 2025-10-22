@@ -10,12 +10,32 @@ export interface SagaOrchestratorEvents {
   sagaFailed: { sagaId: string; data: unknown; error: unknown }
   taskStarted: { sagaId: string; data: unknown; taskName: string }
   taskSucceeded: { sagaId: string; data: unknown; taskName: string }
-  taskFailed: { sagaId: string; data: unknown; taskName: string; error: unknown }
-  middlewareSucceeded: { sagaId: string; data: unknown; taskName: string; middlewareData: Record<string, unknown> }
-  middlewareFailed: { sagaId: string; data: unknown; taskName: string; error: unknown }
+  taskFailed: {
+    sagaId: string
+    data: unknown
+    taskName: string
+    error: unknown
+  }
+  middlewareSucceeded: {
+    sagaId: string
+    data: unknown
+    taskName: string
+    middlewareData: Record<string, unknown>
+  }
+  middlewareFailed: {
+    sagaId: string
+    data: unknown
+    taskName: string
+    error: unknown
+  }
   compensationStarted: { sagaId: string; data: unknown; taskName: string }
   compensationSucceeded: { sagaId: string; data: unknown; taskName: string }
-  compensationFailed: { sagaId: string; data: unknown; taskName: string; error: unknown }
+  compensationFailed: {
+    sagaId: string
+    data: unknown
+    taskName: string
+    error: unknown
+  }
 }
 
 export interface SagaOrchestrator {
@@ -156,7 +176,13 @@ export class SagaOrchestrator extends EventEmitter {
             parentSagaId: saga.state.parentSagaId,
             parentTaskId: saga.state.parentTaskId,
           }
-          middlewareData = await this.runMiddleware(step, data, prevStepResult, sagaContext)
+          middlewareData = await this.runMiddleware(
+            step,
+            data,
+            prevStepResult,
+            sagaContext,
+            saga
+          )
           this.emit("middlewareSucceeded", {
             sagaId: saga.sagaId,
             data,
@@ -198,10 +224,11 @@ export class SagaOrchestrator extends EventEmitter {
         parentTaskId: saga.state.parentTaskId,
       }
       const result = await step.invokeCallback(
-        data, 
-        prevStepResult, 
+        data,
+        prevStepResult,
         middlewareData,
-        sagaContext
+        sagaContext,
+        saga.asReadOnly()
       )
       const endTaskResult = await saga.endTask(step.taskName, result)
 
@@ -222,35 +249,42 @@ export class SagaOrchestrator extends EventEmitter {
     return saga
   }
 
-  private async runMiddleware(
+  private async runMiddleware<StartPayload>(
     step: SagaStep,
     data: unknown,
     prevStepResult: unknown,
-    sagaContext: { sagaId: string; parentSagaId: string | null; parentTaskId: string | null }
+    sagaContext: {
+      sagaId: string
+      parentSagaId: string | null
+      parentTaskId: string | null
+    },
+    saga: Saga<StartPayload>
   ): Promise<Record<string, unknown>> {
     let accumulatedData: Record<string, unknown> = {}
-    
-    for (const middleware of step.middleware) {
-      const result = await middleware(
-        data, 
-        prevStepResult, 
+
+    for (const middlewareCallback of step.middleware) {
+      const result = await middlewareCallback(
+        data,
+        prevStepResult,
         accumulatedData,
-        sagaContext
+        sagaContext,
+        saga.asReadOnly()
       )
-      
+
       // If middleware returns false explicitly, throw an error
       if (result === false) {
-        throw new Error(
-          `Middleware failed for step "${step.taskName}"`
-        )
+        throw new Error(`Middleware failed for step "${step.taskName}"`)
       }
-      
+
       // If middleware returns an object (not true, not void, not false), merge it
-      if (result && result !== true && typeof result === 'object') {
-        accumulatedData = { ...accumulatedData, ...result as Record<string, unknown> }
+      if (result && result !== true && typeof result === "object") {
+        accumulatedData = {
+          ...accumulatedData,
+          ...(result as Record<string, unknown>),
+        }
       }
     }
-    
+
     return accumulatedData
   }
 
@@ -284,7 +318,12 @@ export class SagaOrchestrator extends EventEmitter {
         })
 
         try {
-          const result = await step.compensateCallback(data, taskData, {})
+          const result = await step.compensateCallback(
+            data,
+            taskData,
+            {},
+            saga.asReadOnly()
+          )
           this.emit("compensationSucceeded", {
             sagaId: saga.sagaId,
             data,

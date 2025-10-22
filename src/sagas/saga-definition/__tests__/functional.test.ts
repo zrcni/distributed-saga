@@ -205,7 +205,8 @@ describe("Functional Saga API", () => {
         { initial: true }, 
         { value: 1 }, 
         {},
-        { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }
+        { sagaId: "test-saga", parentSagaId: null, parentTaskId: null },
+        expect.objectContaining({ sagaId: "test-saga" })
       )
     })
 
@@ -281,9 +282,9 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
-      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
-      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
+      expect(step1Invoke).toHaveBeenCalledWith(orderData, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }))
+      expect(step2Invoke).toHaveBeenCalledWith(orderData, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }))
+      expect(step3Invoke).toHaveBeenCalledWith(orderData, step2Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }))
     })
 
     it("should execute compensations in reverse order", async () => {
@@ -545,7 +546,7 @@ describe("Functional Saga API", () => {
       await orchestrator.run(saga, sagaDefinition)
 
       expect(middleware).toHaveBeenCalledTimes(1)
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, null, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }))
       expect(stepInvoke).toHaveBeenCalledTimes(1)
     })
 
@@ -659,7 +660,7 @@ describe("Functional Saga API", () => {
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
-      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null })
+      expect(middleware).toHaveBeenCalledWith({ data: "test" }, step1Result, {}, { sagaId: "test-saga", parentSagaId: null, parentTaskId: null }, expect.objectContaining({ sagaId: "test-saga" }))
       expect(step2Invoke).toHaveBeenCalledTimes(1)
     })
 
