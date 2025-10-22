@@ -12,6 +12,10 @@
     "access": "public"
   },
   "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/cjs/index.d.ts",
@@ -40,7 +44,8 @@
     "test:no-mongo": "jest --config jest.config.no-mongo.js --forceExit --detectOpenHandles",
     "test:mongo": "jest MongoDBSagaLog.test.ts --forceExit --detectOpenHandles",
     "lint:fix": "npm run lint -- --fix",
-    "example:plugins": "ts-node -r tsconfig-paths/register examples/saga-plugins-example.ts"
+    "example:plugins": "ts-node -r tsconfig-paths/register examples/saga-plugins-example.ts",
+    "example": "cd examples/with-express-dashboard && npm run dev"
   },
   "dependencies": {
     "cancelable-promise": "^4.3.1",
