@@ -25,3 +25,4 @@ node_modules/
 __tests__/
 *.test.ts
 *.spec.ts
+docs
