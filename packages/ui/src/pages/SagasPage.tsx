@@ -11,8 +11,25 @@ export const SagasPage: React.FC = () => {
   const [sagas, setSagas] = useState<SagaInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hideCompletedSagas, setHideCompletedSagas] = useState(true);
-  const [hideAbortedSagas, setHideAbortedSagas] = useState(false);
+  
+  // Load filter states from localStorage, with defaults
+  const [hideCompletedSagas, setHideCompletedSagas] = useState(() => {
+    const saved = localStorage.getItem('sagasPage.hideCompletedSagas');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [hideAbortedSagas, setHideAbortedSagas] = useState(() => {
+    const saved = localStorage.getItem('sagasPage.hideAbortedSagas');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+
+  // Save filter states to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('sagasPage.hideCompletedSagas', JSON.stringify(hideCompletedSagas));
+  }, [hideCompletedSagas]);
+
+  useEffect(() => {
+    localStorage.setItem('sagasPage.hideAbortedSagas', JSON.stringify(hideAbortedSagas));
+  }, [hideAbortedSagas]);
 
   useEffect(() => {
     if (name) {
