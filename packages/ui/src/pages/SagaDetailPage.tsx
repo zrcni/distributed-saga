@@ -130,7 +130,7 @@ export const SagaDetailPage: React.FC = () => {
         <div className="saga-title-section">
           <h2>Saga Details</h2>
           <div className={`saga-status status-${saga.status}`}>
-            {saga.status.toUpperCase()}
+            {saga.status === 'aborted' ? 'FAILED' : saga.status.toUpperCase()}
           </div>
         </div>
         <div className="saga-actions">
@@ -253,7 +253,7 @@ export const SagaDetailPage: React.FC = () => {
                                 {childSaga.sagaId}
                               </button>
                               <span className={`saga-status-badge status-${childSaga.status}`}>
-                                {childSaga.status}
+                                {childSaga.status === 'aborted' ? 'FAILED' : childSaga.status}
                               </span>
                             </li>
                           ))}
@@ -280,7 +280,7 @@ export const SagaDetailPage: React.FC = () => {
               >
                 <div className="child-saga-id">{childSaga.sagaId}</div>
                 <div className={`child-saga-status status-${childSaga.status}`}>
-                  {childSaga.status.toUpperCase()}
+                  {childSaga.status === 'aborted' ? 'FAILED' : childSaga.status.toUpperCase()}
                 </div>
                 {childSaga.parentTaskId && (
                   <div className="child-saga-parent-task">

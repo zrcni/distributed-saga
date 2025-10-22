@@ -12,6 +12,7 @@ export const SagasPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hideCompletedSagas, setHideCompletedSagas] = useState(true);
+  const [hideAbortedSagas, setHideAbortedSagas] = useState(false);
 
   useEffect(() => {
     if (name) {
@@ -71,12 +72,20 @@ export const SagasPage: React.FC = () => {
     );
   }
 
-  let displayedSagas = hideCompletedSagas 
-    ? sagas.filter(saga => saga.status !== 'completed')
-    : sagas;
+  let displayedSagas = sagas;
+  
+  // Apply filters
+  if (hideCompletedSagas) {
+    displayedSagas = displayedSagas.filter(saga => saga.status !== 'completed');
+  }
+  if (hideAbortedSagas) {
+    displayedSagas = displayedSagas.filter(saga => saga.status !== 'aborted');
+  }
 
   const totalSagasCount = sagas.length;
   const completedSagasCount = sagas.filter(saga => saga.status === 'completed').length;
+  const abortedSagasCount = sagas.filter(saga => saga.status === 'aborted').length;
+  const activeSagasCount = sagas.filter(saga => saga.status === 'active').length;
 
   return (
     <div className="container">
@@ -90,21 +99,48 @@ export const SagasPage: React.FC = () => {
           <p className="subtitle">Click on a saga to view its details and child sagas</p>
         </div>
         
-        <div className="view-toggle">
-          <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={hideCompletedSagas}
-              onChange={(e) => setHideCompletedSagas(e.target.checked)}
-            />
-            <span>Hide completed sagas</span>
-          </label>
-          <span className="saga-count">
-            {totalSagasCount} root saga{totalSagasCount !== 1 ? 's' : ''}
-            {completedSagasCount > 0 && (
-              <span className="completed-count"> • {completedSagasCount} completed</span>
-            )}
-          </span>
+        <div className="view-controls">
+          <div className="saga-count-summary">
+            <span className="saga-count">
+              {totalSagasCount} root saga{totalSagasCount !== 1 ? 's' : ''}
+            </span>
+            <div className="status-counts">
+              {activeSagasCount > 0 && (
+                <span className="status-count status-active-count">
+                  {activeSagasCount} active
+                </span>
+              )}
+              {completedSagasCount > 0 && (
+                <span className="status-count status-completed-count">
+                  {completedSagasCount} completed
+                </span>
+              )}
+              {abortedSagasCount > 0 && (
+                <span className="status-count status-aborted-count">
+                  {abortedSagasCount} failed
+                </span>
+              )}
+            </div>
+          </div>
+          
+          <div className="view-toggle">
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={hideCompletedSagas}
+                onChange={(e) => setHideCompletedSagas(e.target.checked)}
+              />
+              <span>Hide completed</span>
+            </label>
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={hideAbortedSagas}
+                onChange={(e) => setHideAbortedSagas(e.target.checked)}
+              />
+              <span>Hide failed</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -125,7 +161,7 @@ export const SagasPage: React.FC = () => {
                   <strong>ID:</strong> <code>{saga.sagaId}</code>
                 </div>
                 <div className={`saga-status-badge status-${saga.status}`}>
-                  {saga.status.toUpperCase()}
+                  {saga.status === 'aborted' ? 'FAILED' : saga.status.toUpperCase()}
                 </div>
               </div>
 
