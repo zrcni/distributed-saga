@@ -53,7 +53,6 @@ describe("MongoDBSagaLog", () => {
   describe("startSaga", () => {
     it("should start a new saga successfully", async () => {
       const result = await sagaLog.startSaga("saga-1", { job: "test-data" })
-      expect(result).toBeOkResult()
 
       // Verify the saga was created in the database
       const doc = await collection.findOne({ sagaId: "saga-1" })
@@ -65,20 +64,16 @@ describe("MongoDBSagaLog", () => {
 
     it("should return error when starting a saga that already exists", async () => {
       // Start saga first time
-      const result1 = await sagaLog.startSaga("saga-1", { job: "test-data" })
-      expect(result1).toBeOkResult()
+      await sagaLog.startSaga("saga-1", { job: "test-data" })
 
-      // Try to start same saga again
-      const result2 = await sagaLog.startSaga("saga-1", { job: "test-data" })
-      expect(result2.isError()).toBe(true)
+      // Try to start same saga again - should throw
+      await expect(sagaLog.startSaga("saga-1", { job: "test-data" })).rejects.toThrow()
     })
 
     it("should handle different saga IDs independently", async () => {
       const result1 = await sagaLog.startSaga("saga-1", { job: "data-1" })
       const result2 = await sagaLog.startSaga("saga-2", { job: "data-2" })
 
-      expect(result1).toBeOkResult()
-      expect(result2).toBeOkResult()
 
       const count = await collection.countDocuments()
       expect(count).toBe(2)
@@ -100,7 +95,6 @@ describe("MongoDBSagaLog", () => {
       })
 
       const result = await sagaLog.logMessage(message)
-      expect(result).toBeOkResult()
 
       // Verify message was added
       const doc = await collection.findOne({ sagaId: "saga-1" })
@@ -116,8 +110,7 @@ describe("MongoDBSagaLog", () => {
         taskId: "task-1",
       })
 
-      const result = await sagaLog.logMessage(message)
-      expect(result.isError()).toBe(true)
+      await expect(sagaLog.logMessage(message)).rejects.toThrow()
     })
 
     it("should log multiple messages in order", async () => {
@@ -140,7 +133,6 @@ describe("MongoDBSagaLog", () => {
 
       for (const msg of messages) {
         const result = await sagaLog.logMessage(msg)
-        expect(result).toBeOkResult()
       }
 
       const doc = await collection.findOne({ sagaId: "saga-1" })
@@ -174,40 +166,27 @@ describe("MongoDBSagaLog", () => {
       )
 
       const result = await sagaLog.getMessages("saga-1")
-      expect(result).toBeOkResult()
-
-      if (result.isOk()) {
-        expect(result.data).toHaveLength(3) // StartSaga + 2 messages
-        expect(result.data[0].msgType).toBe(SagaMessageType.StartSaga)
-        expect(result.data[1].msgType).toBe(SagaMessageType.StartTask)
-        expect(result.data[2].msgType).toBe(SagaMessageType.EndTask)
-      }
+      expect(result).toHaveLength(3) // StartSaga + 2 messages
+      expect(result[0].msgType).toBe(SagaMessageType.StartSaga)
+      expect(result[1].msgType).toBe(SagaMessageType.StartTask)
+      expect(result[2].msgType).toBe(SagaMessageType.EndTask)
     })
 
     it("should return error for non-existent saga", async () => {
-      const result = await sagaLog.getMessages("non-existent-saga")
-      expect(result.isError()).toBe(true)
+      await expect(sagaLog.getMessages("non-existent-saga")).rejects.toThrow()
     })
 
     it("should return only the StartSaga message for newly started saga", async () => {
       const result = await sagaLog.getMessages("saga-1")
-      expect(result).toBeOkResult()
-
-      if (result.isOk()) {
-        expect(result.data).toHaveLength(1)
-        expect(result.data[0].msgType).toBe(SagaMessageType.StartSaga)
-      }
+      expect(result).toHaveLength(1)
+      expect(result[0].msgType).toBe(SagaMessageType.StartSaga)
     })
   })
 
   describe("getActiveSagaIds", () => {
     it("should return empty array when no sagas exist", async () => {
       const result = await sagaLog.getActiveSagaIds()
-      expect(result).toBeOkResult()
-
-      if (result.isOk()) {
-        expect(result.data).toEqual([])
-      }
+      expect(result).toEqual([])
     })
 
     it("should return all saga IDs", async () => {
@@ -216,14 +195,10 @@ describe("MongoDBSagaLog", () => {
       await sagaLog.startSaga("saga-3", { job: "data-3" })
 
       const result = await sagaLog.getActiveSagaIds()
-      expect(result).toBeOkResult()
-
-      if (result.isOk()) {
-        expect(result.data).toHaveLength(3)
-        expect(result.data).toContain("saga-1")
-        expect(result.data).toContain("saga-2")
-        expect(result.data).toContain("saga-3")
-      }
+      expect(result).toHaveLength(3)
+      expect(result).toContain("saga-1")
+      expect(result).toContain("saga-2")
+      expect(result).toContain("saga-3")
     })
 
     it("should return saga IDs after some are deleted", async () => {
@@ -232,13 +207,9 @@ describe("MongoDBSagaLog", () => {
       await sagaLog.deleteSaga("saga-1")
 
       const result = await sagaLog.getActiveSagaIds()
-      expect(result).toBeOkResult()
-
-      if (result.isOk()) {
-        expect(result.data).toHaveLength(1)
-        expect(result.data).toContain("saga-2")
-        expect(result.data).not.toContain("saga-1")
-      }
+      expect(result).toHaveLength(1)
+      expect(result).toContain("saga-2")
+      expect(result).not.toContain("saga-1")
     })
   })
 
@@ -248,8 +219,7 @@ describe("MongoDBSagaLog", () => {
     })
 
     it("should delete an existing saga", async () => {
-      const result = await sagaLog.deleteSaga("saga-1")
-      expect(result).toBeOkResult()
+      await sagaLog.deleteSaga("saga-1")
 
       // Verify saga was deleted
       const doc = await collection.findOne({ sagaId: "saga-1" })
@@ -258,7 +228,6 @@ describe("MongoDBSagaLog", () => {
 
     it("should succeed even when deleting non-existent saga", async () => {
       const result = await sagaLog.deleteSaga("non-existent-saga")
-      expect(result).toBeOkResult()
     })
   })
 
@@ -272,7 +241,6 @@ describe("MongoDBSagaLog", () => {
     it("should create saga using the coordinator", async () => {
       const coordinator = MongoDBSagaLog.createMongoDBSagaCoordinator(collection)
       const result = await coordinator.createSaga("saga-1", { job: "test-data" })
-      expect(result).toBeOkResult()
 
       // Verify saga was created in database
       const doc = await collection.findOne({ sagaId: "saga-1" })
@@ -302,7 +270,6 @@ describe("MongoDBSagaLog", () => {
       const startResult = await sagaLog.startSaga("saga-workflow", {
         orderId: "12345",
       })
-      expect(startResult).toBeOkResult()
 
       // Log task start
       await sagaLog.logMessage(
@@ -349,21 +316,15 @@ describe("MongoDBSagaLog", () => {
 
       // Verify complete message history
       const messagesResult = await sagaLog.getMessages("saga-workflow")
-      expect(messagesResult).toBeOkResult()
-
-      if (messagesResult.isOk()) {
-        expect(messagesResult.data).toHaveLength(6)
-        expect(messagesResult.data[0].msgType).toBe(SagaMessageType.StartSaga)
-        expect(messagesResult.data[5].msgType).toBe(SagaMessageType.EndSaga)
-      }
+      expect(messagesResult).toHaveLength(6)
+      expect(messagesResult[0].msgType).toBe(SagaMessageType.StartSaga)
+      expect(messagesResult[5].msgType).toBe(SagaMessageType.EndSaga)
 
       // Clean up
-      const deleteResult = await sagaLog.deleteSaga("saga-workflow")
-      expect(deleteResult).toBeOkResult()
+      await sagaLog.deleteSaga("saga-workflow")
 
       // Verify saga is deleted
-      const getResult = await sagaLog.getMessages("saga-workflow")
-      expect(getResult.isError()).toBe(true)
+      await expect(sagaLog.getMessages("saga-workflow")).rejects.toThrow()
     })
   })
 })

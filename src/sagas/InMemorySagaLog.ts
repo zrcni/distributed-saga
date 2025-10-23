@@ -1,5 +1,4 @@
 import { SagaAlreadyRunningError, SagaNotRunningError } from "@/errors"
-import { Result, ResultError, ResultOk } from "@/Result"
 import { SagaLog, SagaLogTransactionOptions } from "./types"
 import { SagaCoordinator } from "./SagaCoordinator"
 import { SagaMessage } from "./SagaMessage"
@@ -21,33 +20,29 @@ export class InMemorySagaLog implements SagaLog {
     this.childSagaIndex = {}
   }
 
-  async getMessages(
-    sagaId: string
-  ): Promise<ResultOk<SagaMessage[]> | ResultError<SagaNotRunningError>> {
+  async getMessages(sagaId: string): Promise<SagaMessage[]> {
     const sagaData = this.sagas[sagaId]
 
     if (!sagaData) {
-      return Result.error(
-        new SagaNotRunningError("saga has not started yet", {
-          sagaId,
-        })
-      )
+      throw new SagaNotRunningError("saga has not started yet", {
+        sagaId,
+      })
     }
 
-    return Result.ok(sagaData.messages)
+    return sagaData.messages
   }
 
-  async getActiveSagaIds(): Promise<ResultOk<string[]>> {
+  async getActiveSagaIds(): Promise<string[]> {
     const sagaIds = Object.keys(this.sagas)
-    return Result.ok(sagaIds)
+    return sagaIds
   }
 
-  async getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk<string[]>> {
+  async getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<string[]> {
     const childIds = this.childSagaIndex[parentSagaId]
     if (!childIds) {
-      return Result.ok([])
+      return []
     }
-    return Result.ok(Array.from(childIds))
+    return Array.from(childIds)
   }
 
   async startSaga<D>(
@@ -55,12 +50,10 @@ export class InMemorySagaLog implements SagaLog {
     job: D,
     parentSagaId: string | null = null,
     parentTaskId: string | null = null
-  ): Promise<ResultOk | ResultError<SagaAlreadyRunningError>> {
+  ): Promise<void> {
     const sagaData = this.sagas[sagaId]
     if (sagaData) {
-      return Result.error(
-        new SagaAlreadyRunningError("saga has already been started", { sagaId })
-      )
+      throw new SagaAlreadyRunningError("saga has already been started", { sagaId })
     }
 
     const msg = SagaMessage.createStartSagaMessage(sagaId, job, parentSagaId, parentTaskId)
@@ -81,37 +74,29 @@ export class InMemorySagaLog implements SagaLog {
       }
       this.childSagaIndex[parentSagaId].add(sagaId)
     }
-
-    return Result.ok()
   }
 
-  async logMessage(
-    msg: SagaMessage
-  ): Promise<ResultOk | ResultError<SagaNotRunningError>> {
+  async logMessage(msg: SagaMessage): Promise<void> {
     const sagaData = this.sagas[msg.sagaId]
 
     if (!sagaData) {
-      return Result.error(
-        new SagaNotRunningError("saga has not started yet", {
-          sagaId: msg.sagaId,
-          taskId: msg.taskId,
-        })
-      )
+      throw new SagaNotRunningError("saga has not started yet", {
+        sagaId: msg.sagaId,
+        taskId: msg.taskId,
+      })
     }
 
     sagaData.messages.push(msg)
     sagaData.updatedAt = new Date()
-
-    return Result.ok()
   }
 
   /**
    * Delete a saga from memory
    */
-  deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): ResultOk | ResultError {
+  async deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): Promise<void> {
     const sagaData = this.sagas[sagaId]
     if (!sagaData) {
-      return Result.error(new SagaNotRunningError("saga not found", { sagaId }))
+      throw new SagaNotRunningError("saga not found", { sagaId })
     }
 
     // Remove from parent's child index if it has a parent
@@ -130,14 +115,13 @@ export class InMemorySagaLog implements SagaLog {
     delete this.childSagaIndex[sagaId]
 
     delete this.sagas[sagaId]
-    return Result.ok()
   }
 
   /**
    * Delete sagas older than a specific date
    * Useful for cleaning up old completed or abandoned sagas
    */
-  deleteOldSagas(olderThan: Date): ResultOk<number> {
+  deleteOldSagas(olderThan: Date): number {
     let deletedCount = 0
     for (const sagaId in this.sagas) {
       if (this.sagas[sagaId].updatedAt < olderThan) {
@@ -145,21 +129,21 @@ export class InMemorySagaLog implements SagaLog {
         deletedCount++
       }
     }
-    return Result.ok(deletedCount)
+    return deletedCount
   }
 
   /**
    * Get sagas that haven't been updated since a specific date
    * Useful for finding stale or abandoned sagas
    */
-  getStaleSagaIds(olderThan: Date): ResultOk<string[]> {
+  getStaleSagaIds(olderThan: Date): string[] {
     const staleIds: string[] = []
     for (const sagaId in this.sagas) {
       if (this.sagas[sagaId].updatedAt < olderThan) {
         staleIds.push(sagaId)
       }
     }
-    return Result.ok(staleIds)
+    return staleIds
   }
 
   /**

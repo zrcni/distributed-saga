@@ -1,5 +1,4 @@
 import { InvalidSagaStateError } from "@/errors"
-import { Result } from "@/Result"
 import { SagaCoordinator } from "./SagaCoordinator"
 import { SagaMessageType } from "./SagaMessage"
 import { SagaState } from "./SagaState"
@@ -11,25 +10,18 @@ export enum SagaRecoveryType {
 }
 
 export class SagaRecovery {
-  static async recoverState(sagaId: string, sagaCoordinator: SagaCoordinator) {
-    const result = await sagaCoordinator.log.getMessages(sagaId)
-    if (result.isError()) {
-      return result
-    }
-
-    const messages = result.data
+  static async recoverState(sagaId: string, sagaCoordinator: SagaCoordinator): Promise<SagaState | null> {
+    const messages = await sagaCoordinator.log.getMessages(sagaId)
 
     if (messages.length === 0) {
-      return Result.ok(null)
+      return null
     }
 
     const startMsg = messages[0]
     if (startMsg.msgType !== SagaMessageType.StartSaga) {
-      return Result.error(
-        new InvalidSagaStateError("StartSaga must be the first message", {
-          sagaId,
-        })
-      )
+      throw new InvalidSagaStateError("StartSaga must be the first message", {
+        sagaId,
+      })
     }
 
     const state = SagaState.create(sagaId, startMsg.data, startMsg.parentSagaId ?? null, startMsg.parentTaskId ?? null)
@@ -41,16 +33,13 @@ export class SagaRecovery {
 
       const error = validateSagaUpdate(state, msg)
       if (error) {
-        return Result.error(error)
+        throw error
       }
 
-      const result = updateSagaState(state, msg)
-      if (result.isError()) {
-        return result
-      }
+      updateSagaState(state, msg)
     }
 
-    return Result.ok(state)
+    return state
   }
 
   static isSagaInSafeState(state: SagaState) {

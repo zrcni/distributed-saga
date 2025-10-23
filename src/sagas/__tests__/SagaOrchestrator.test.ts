@@ -38,10 +38,7 @@ describe("SagaOrchestrator", () => {
    */
   it("run all steps successfully", async () => {
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, testSagaDefinition)
 
@@ -63,10 +60,7 @@ describe("SagaOrchestrator", () => {
     step2Invoke.mockRejectedValue(new Error("mock error"))
 
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, testSagaDefinition)
 
@@ -85,10 +79,7 @@ describe("SagaOrchestrator", () => {
    */
   it("retry step that was started but not completed during recovery", async () => {
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
 
     // Simulate step1 completing successfully
     await saga.startTask("step1")
@@ -142,10 +133,7 @@ describe("SagaOrchestrator", () => {
       .end()
 
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
@@ -195,10 +183,7 @@ describe("SagaOrchestrator", () => {
       .end()
 
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
@@ -236,10 +221,7 @@ describe("SagaOrchestrator", () => {
       .end()
 
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
@@ -277,10 +259,7 @@ describe("SagaOrchestrator", () => {
       .end()
 
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 
@@ -332,10 +311,7 @@ describe("SagaOrchestrator", () => {
       .end()
 
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test id", "mock data")
-    expect(result).toBeOkResult()
-    if (result.isError()) return
-    const saga = result.data
+    const saga = await coordinator.createSaga("test id", "mock data")
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDefWithMiddleware)
 

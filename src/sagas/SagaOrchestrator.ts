@@ -73,10 +73,7 @@ export class SagaOrchestrator extends EventEmitter {
     return {
       get: <T = Record<string, any>>() => saga.getSagaContext<T>(),
       update: async (updates: Record<string, any>) => {
-        const result = await saga.updateSagaContext(updates)
-        if (result.isError()) {
-          throw result.data
-        }
+        await saga.updateSagaContext(updates)
       },
     }
   }
@@ -211,10 +208,7 @@ export class SagaOrchestrator extends EventEmitter {
       }
 
       if (step.isEnd) {
-        const endSagaResult = await saga.endSaga()
-        if (endSagaResult.isError()) {
-          throw endSagaResult.data
-        }
+        await saga.endSaga()
         this.emit("sagaSucceeded", {
           sagaId: saga.sagaId,
           data,
@@ -257,13 +251,7 @@ export class SagaOrchestrator extends EventEmitter {
       // Only start the task if it hasn't been started yet
       // This handles recovery scenarios where a task was started but not completed
       if (!(await saga.isTaskStarted(step.taskName))) {
-        const startTaskResult = await saga.startTask(
-          step.taskName,
-          prevStepResult
-        )
-        if (startTaskResult.isError()) {
-          throw startTaskResult.data
-        }
+        await saga.startTask(step.taskName, prevStepResult)
 
         this.emit("taskStarted", {
           sagaId: saga.sagaId,
@@ -278,11 +266,7 @@ export class SagaOrchestrator extends EventEmitter {
         middlewareData
       )
       const result = await step.invokeCallback(data, taskContext)
-      const endTaskResult = await saga.endTask(step.taskName, result)
-
-      if (endTaskResult.isError()) {
-        throw endTaskResult.data
-      }
+      await saga.endTask(step.taskName, result)
 
       this.emit("taskSucceeded", {
         sagaId: saga.sagaId,
@@ -345,13 +329,7 @@ export class SagaOrchestrator extends EventEmitter {
 
       if (await saga.isTaskCompleted(step.taskName)) {
         const taskData = await saga.getEndTaskData(step.taskName)
-        const startCompResult = await saga.startCompensatingTask(
-          step.taskName,
-          taskData
-        )
-        if (startCompResult.isError()) {
-          throw startCompResult.data
-        }
+        await saga.startCompensatingTask(step.taskName, taskData)
 
         this.emit("compensationStarted", {
           sagaId: saga.sagaId,

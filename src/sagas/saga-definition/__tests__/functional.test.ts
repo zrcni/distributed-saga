@@ -192,10 +192,8 @@ describe("Functional Saga API", () => {
       const result = await coordinator.createSaga("test-saga", {
         initial: true,
       })
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -232,10 +230,8 @@ describe("Functional Saga API", () => {
       const result = await coordinator.createSaga("test-saga", {
         initial: true,
       })
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -280,10 +276,8 @@ describe("Functional Saga API", () => {
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const orderData: OrderData = { orderId: "order-1", amount: 100 }
       const result = await coordinator.createSaga("test-saga", orderData)
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -348,10 +342,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -378,10 +370,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -405,10 +395,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -466,10 +454,8 @@ describe("Functional Saga API", () => {
         password: "secret123",
       }
       const result = await coordinator.createSaga("test-saga", registrationData)
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -539,10 +525,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
 
       // Should not throw even though steps don't have compensate callbacks
       const orchestrator = new SagaOrchestrator()
@@ -567,10 +551,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", { data: "test" })
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -609,10 +591,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -634,10 +614,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -661,10 +639,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -690,10 +666,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", { data: "test" })
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -729,10 +703,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 
@@ -756,10 +728,8 @@ describe("Functional Saga API", () => {
 
       const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
       const result = await coordinator.createSaga("test-saga", {})
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const saga = result.data
+      const saga = result
       const orchestrator = new SagaOrchestrator()
       await orchestrator.run(saga, sagaDefinition)
 

@@ -1,6 +1,5 @@
 import { SagaMessage, SagaMessageType } from "../SagaMessage"
 import { InMemorySagaLog } from "../InMemorySagaLog"
-import { Result } from "@/Result"
 
 describe("SagaMessage timestamps", () => {
   it("should automatically set timestamp when creating messages", () => {
@@ -34,35 +33,28 @@ describe("SagaMessage timestamps", () => {
     const startTime = new Date()
     
     // Start a saga
-    const startResult = await log.startSaga("test-saga-3", { test: "data" })
-    expect(startResult.isOk()).toBe(true)
+    await log.startSaga("test-saga-3", { test: "data" })
     
     // Wait a bit
     await new Promise(resolve => setTimeout(resolve, 10))
     
     // Add another message
     const taskMsg = SagaMessage.createStartTaskMessage("test-saga-3", "task-1", { task: "data" })
-    const logResult = await log.logMessage(taskMsg)
-    expect(logResult.isOk()).toBe(true)
+    await log.logMessage(taskMsg)
     
     // Retrieve messages
-    const messagesResult = await log.getMessages("test-saga-3")
-    expect(messagesResult.isOk()).toBe(true)
+    const messages = await log.getMessages("test-saga-3")
+    expect(messages).toHaveLength(2)
+      
+    // Check first message (StartSaga)
+    expect(messages[0].timestamp).toBeDefined()
+    expect(messages[0].timestamp).toBeInstanceOf(Date)
+    expect(messages[0].timestamp.getTime()).toBeGreaterThanOrEqual(startTime.getTime())
     
-    if (messagesResult.isOk()) {
-      const messages = messagesResult.data
-      expect(messages).toHaveLength(2)
-      
-      // Check first message (StartSaga)
-      expect(messages[0].timestamp).toBeDefined()
-      expect(messages[0].timestamp).toBeInstanceOf(Date)
-      expect(messages[0].timestamp.getTime()).toBeGreaterThanOrEqual(startTime.getTime())
-      
-      // Check second message (StartTask)
-      expect(messages[1].timestamp).toBeDefined()
-      expect(messages[1].timestamp).toBeInstanceOf(Date)
-      expect(messages[1].timestamp.getTime()).toBeGreaterThanOrEqual(messages[0].timestamp.getTime())
-    }
+    // Check second message (StartTask)
+    expect(messages[1].timestamp).toBeDefined()
+    expect(messages[1].timestamp).toBeInstanceOf(Date)
+    expect(messages[1].timestamp.getTime()).toBeGreaterThanOrEqual(messages[0].timestamp.getTime())
   })
 
   it("should create all message types with timestamps", () => {

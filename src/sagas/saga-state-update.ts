@@ -1,4 +1,3 @@
-import { Result, ResultError, ResultOk } from "@/Result"
 import {
   InvalidSagaMessageError,
   InvalidSagaStateError,
@@ -228,16 +227,14 @@ export function validateSagaUpdate(
 export function updateSagaState(
   state: SagaState,
   msg: SagaMessage
-): ResultOk | ResultError<InvalidSagaStateUpdateError> {
+): void {
   switch (msg.msgType) {
     case SagaMessageType.StartSaga: {
-      return Result.error(
-        new InvalidSagaStateUpdateError(
-          "Cannot apply StartSaga message to an already existing saga",
-          {
-            sagaId: msg.sagaId,
-          }
-        )
+      throw new InvalidSagaStateUpdateError(
+        "Cannot apply StartSaga message to an already existing saga",
+        {
+          sagaId: msg.sagaId,
+        }
       )
     }
 
@@ -294,6 +291,4 @@ export function updateSagaState(
       break
     }
   }
-
-  return Result.ok()
 }

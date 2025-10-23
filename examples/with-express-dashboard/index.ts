@@ -42,66 +42,45 @@ async function createExampleSagas() {
     .end()
 
   // Create a few example sagas
-  const saga1Result = await coordinator.createSaga("order-001", {
+  const saga1 = await coordinator.createSaga("order-001", {
     orderId: "order-001",
     amount: 100,
     customerId: "cust-123",
   })
 
-  if (saga1Result.isOk()) {
-    const saga1 = saga1Result.data as Saga<{
-      orderId: string
-      amount: number
-      customerId: string
-    }>
-    await saga1.startTask("processPayment")
-    await saga1.endTask("processPayment", { paymentId: "pay_123" })
-    await saga1.startTask("reserveInventory")
-    // Leave this task incomplete to demonstrate recovery scenario
-  }
+  await saga1.startTask("processPayment")
+  await saga1.endTask("processPayment", { paymentId: "pay_123" })
+  await saga1.startTask("reserveInventory")
+  // Leave this task incomplete to demonstrate recovery scenario
 
-  const saga2Result = await coordinator.createSaga("order-002", {
+  const saga2 = await coordinator.createSaga("order-002", {
     orderId: "order-002",
     amount: 250,
     customerId: "cust-456",
   })
 
-  if (saga2Result.isOk()) {
-    const saga2 = saga2Result.data as Saga<{
-      orderId: string
-      amount: number
-      customerId: string
-    }>
-    await saga2.startTask("processPayment")
-    await saga2.endTask("processPayment", { paymentId: "pay_456" })
-    await saga2.startTask("reserveInventory")
-    await saga2.endTask("reserveInventory", { reservationId: "res_789" })
-    await saga2.startTask("sendEmail")
-    await saga2.endTask("sendEmail", { emailSent: true })
-    await saga2.endSaga()
-  }
+  await saga2.startTask("processPayment")
+  await saga2.endTask("processPayment", { paymentId: "pay_456" })
+  await saga2.startTask("reserveInventory")
+  await saga2.endTask("reserveInventory", { reservationId: "res_789" })
+  await saga2.startTask("sendEmail")
+  await saga2.endTask("sendEmail", { emailSent: true })
+  await saga2.endSaga()
 
-  const saga3Result = await coordinator.createSaga("order-003", {
+  const saga3 = await coordinator.createSaga("order-003", {
     orderId: "order-003",
     amount: 500,
     customerId: "cust-789",
   })
 
-  if (saga3Result.isOk()) {
-    const saga3 = saga3Result.data as Saga<{
-      orderId: string
-      amount: number
-      customerId: string
-    }>
-    await saga3.startTask("processPayment")
-    await saga3.endTask("processPayment", { paymentId: "pay_789" })
-    await saga3.abortSaga()
-    // Start compensation
-    await saga3.startCompensatingTask("processPayment", {
-      paymentId: "pay_789",
-    })
-    await saga3.endCompensatingTask("processPayment", { refunded: true })
-  }
+  await saga3.startTask("processPayment")
+  await saga3.endTask("processPayment", { paymentId: "pay_789" })
+  await saga3.abortSaga()
+  // Start compensation
+  await saga3.startCompensatingTask("processPayment", {
+    paymentId: "pay_789",
+  })
+  await saga3.endCompensatingTask("processPayment", { refunded: true })
 
   console.log("Created example sagas")
 }
@@ -115,201 +94,186 @@ async function createNestedSagasExample() {
   const pageCount = 5
 
   // Create parent saga
-  const parentResult = await coordinator.createSaga(parentSagaId, {
+  const parent = await coordinator.createSaga(parentSagaId, {
     domain,
     pageCount,
   })
 
-  if (parentResult.isOk()) {
-    const parent = parentResult.data as Saga<{ domain: string; pageCount: number }>
+  // Parent saga: Plan the crawl
+  await parent.startTask("planCrawl")
+  await parent.endTask("planCrawl", {
+    webpages: Array.from({ length: pageCount }, (_, i) => ({
+      url: `https://${domain}/page${i + 1}`,
+      pageNumber: i + 1,
+    })),
+  })
 
-    // Parent saga: Plan the crawl
-    await parent.startTask("planCrawl")
-    await parent.endTask("planCrawl", {
-      webpages: Array.from({ length: pageCount }, (_, i) => ({
-        url: `https://${domain}/page${i + 1}`,
-        pageNumber: i + 1,
-      })),
-    })
+  // Parent saga: Start crawling all pages
+  await parent.startTask("crawlAllPages")
 
-    // Parent saga: Start crawling all pages
-    await parent.startTask("crawlAllPages")
+  // Create child sagas for each page
+  const childResults = []
+  for (let i = 1; i <= pageCount; i++) {
+    const childSagaId = `${parentSagaId}-page${i}`
+    const child = await coordinator.createSaga(
+      childSagaId,
+      {
+        url: `https://${domain}/page${i}`,
+        pageNumber: i,
+      },
+      {
+        parentSagaId: parentSagaId,
+        parentTaskId: "crawlAllPages", // the parent task that creates child sagas
+      }
+    )
 
-    // Create child sagas for each page
-    const childResults = []
-    for (let i = 1; i <= pageCount; i++) {
-      const childSagaId = `${parentSagaId}-page${i}`
-      const childResult = await coordinator.createSaga(
-        childSagaId,
+    // Simulate different states for different child sagas
+    if (i === 1 || i === 2 || i === 5) {
+      // Completed child sagas with deep nesting
+      await child.startTask("fetchContent")
+      await child.endTask("fetchContent", {
+        html: `<html><title>Page ${i}</title></html>`,
+        fetchedAt: new Date(),
+      })
+
+      await child.startTask("parseContent")
+      await child.endTask("parseContent", {
+        title: `Page ${i}`,
+        wordCount: 100 + i * 10,
+      })
+
+      // NEW: Add processContent task with nested child saga
+      await child.startTask("processContent")
+
+      // Create nested child saga for content processing
+      const processSagaId = `${childSagaId}-process-content`
+      const processSaga = await coordinator.createSaga(processSagaId, {
+        pageId: childSagaId,
+        contentType: "webpage",
+      })
+
+      // Generate summary
+      await processSaga.startTask("generateSummary")
+      await processSaga.endTask("generateSummary", {
+        summary: `Summary of page ${i}`,
+        length: 50,
+      })
+
+      // Generate embeddings
+      await processSaga.startTask("generateEmbeddings")
+      await processSaga.endTask("generateEmbeddings", {
+        embeddings: [0.1, 0.2, 0.3],
+        model: "text-embedding-v1",
+      })
+
+      await processSaga.endSaga()
+
+      await child.endTask("processContent", { processed: true })
+
+      await child.startTask("saveToDatabase")
+      await child.endTask("saveToDatabase", {
+        saved: true,
+        savedAt: new Date(),
+      })
+      await child.endSaga()
+      childResults.push({ pageNumber: i, status: "completed" })
+    } else if (i === 3) {
+      // Active child saga (in progress) - stopped at processContent
+      await child.startTask("fetchContent")
+      await child.endTask("fetchContent", {
+        html: `<html><title>Page ${i}</title></html>`,
+        fetchedAt: new Date(),
+      })
+
+      await child.startTask("parseContent")
+      await child.endTask("parseContent", {
+        title: `Page ${i}`,
+        wordCount: 130,
+      })
+
+      // Start processContent but don't complete it (shows nested saga in progress)
+      await child.startTask("processContent")
+
+      const processSagaId = `${childSagaId}-process-content`
+      const processSaga = await coordinator.createSaga(
+        processSagaId,
         {
-          url: `https://${domain}/page${i}`,
-          pageNumber: i,
+          pageId: childSagaId,
+          contentType: "webpage",
         },
         {
-          parentSagaId: parentSagaId,
-          parentTaskId: "crawlAllPages", // the parent task that creates child sagas
+          parentSagaId: childSagaId,
+          parentTaskId: "processContent",
         }
       )
 
-      if (childResult.isOk()) {
-        const child = childResult.data as Saga<{ url: string; pageNumber: number }>
+      // Complete generateSummary
+      await processSaga.startTask("generateSummary")
+      await processSaga.endTask("generateSummary", {
+        summary: `Summary of page ${i}`,
+        length: 50,
+      })
 
-        // Simulate different states for different child sagas
-        if (i === 1 || i === 2 || i === 5) {
-          // Completed child sagas with deep nesting
-          await child.startTask("fetchContent")
-          await child.endTask("fetchContent", {
-            html: `<html><title>Page ${i}</title></html>`,
-            fetchedAt: new Date(),
-          })
-          
-          await child.startTask("parseContent")
-          await child.endTask("parseContent", {
-            title: `Page ${i}`,
-            wordCount: 100 + i * 10,
-          })
-          
-          // NEW: Add processContent task with nested child saga
-          await child.startTask("processContent")
-          
-          // Create nested child saga for content processing
-          const processSagaId = `${childSagaId}-process-content`
-          const processResult = await coordinator.createSaga(
-            processSagaId,
-            {
-              pageId: childSagaId,
-              contentType: "webpage",
-            }
-          )
-          
-          if (processResult.isOk()) {
-            const processSaga = processResult.data as Saga<{ pageId: string; contentType: string }>
-            
-            // Generate summary
-            await processSaga.startTask("generateSummary")
-            await processSaga.endTask("generateSummary", {
-              summary: `Summary of page ${i}`,
-              length: 50,
-            })
-            
-            // Generate embeddings
-            await processSaga.startTask("generateEmbeddings")
-            await processSaga.endTask("generateEmbeddings", {
-              embeddings: [0.1, 0.2, 0.3],
-              model: "text-embedding-v1",
-            })
-            
-            await processSaga.endSaga()
-          }
-          
-          await child.endTask("processContent", { processed: true })
-          
-          await child.startTask("saveToDatabase")
-          await child.endTask("saveToDatabase", { saved: true, savedAt: new Date() })
-          await child.endSaga()
-          childResults.push({ pageNumber: i, status: "completed" })
-        } else if (i === 3) {
-          // Active child saga (in progress) - stopped at processContent
-          await child.startTask("fetchContent")
-          await child.endTask("fetchContent", {
-            html: `<html><title>Page ${i}</title></html>`,
-            fetchedAt: new Date(),
-          })
-          
-          await child.startTask("parseContent")
-          await child.endTask("parseContent", {
-            title: `Page ${i}`,
-            wordCount: 130,
-          })
-          
-          // Start processContent but don't complete it (shows nested saga in progress)
-          await child.startTask("processContent")
-          
-          const processSagaId = `${childSagaId}-process-content`
-          const processResult = await coordinator.createSaga(
-            processSagaId,
-            {
-              pageId: childSagaId,
-              contentType: "webpage",
-            },
-            {
-              parentSagaId: childSagaId,
-              parentTaskId: "processContent",
-            }
-          )
-          
-          if (processResult.isOk()) {
-            const processSaga = processResult.data as Saga<{ pageId: string; contentType: string }>
-            
-            // Complete generateSummary
-            await processSaga.startTask("generateSummary")
-            await processSaga.endTask("generateSummary", {
-              summary: `Summary of page ${i}`,
-              length: 50,
-            })
-            
-            // Start but don't complete generateEmbeddings (shows active state)
-            await processSaga.startTask("generateEmbeddings")
-            // Leave incomplete to show active state in nested saga
-          }
-          
-          // Leave processContent task incomplete to show "in progress" state
-          childResults.push({ pageNumber: i, status: "active" })
-        } else if (i === 4) {
-          // Failed and compensating child saga
-          await child.startTask("fetchContent")
-          await child.endTask("fetchContent", {
-            html: `<html><title>Page ${i}</title></html>`,
-            fetchedAt: new Date(),
-          })
-          
-          await child.startTask("parseContent")
-          await child.endTask("parseContent", {
-            title: `Page ${i}`,
-            wordCount: 140,
-          })
-          
-          await child.startTask("processContent")
-          await child.endTask("processContent", { processed: true })
-          
-          await child.startTask("saveToDatabase")
-          await child.endTask("saveToDatabase", { saved: true, savedAt: new Date() })
-          
-          // Abort and compensate
-          await child.abortSaga()
-          await child.startCompensatingTask("saveToDatabase", {})
-          await child.endCompensatingTask("saveToDatabase", { deleted: true })
-          await child.startCompensatingTask("processContent", {})
-          await child.endCompensatingTask("processContent", { cleared: true })
-          await child.startCompensatingTask("parseContent", {})
-          await child.endCompensatingTask("parseContent", { cleared: true })
-          await child.startCompensatingTask("fetchContent", {})
-          await child.endCompensatingTask("fetchContent", { cleared: true })
-          await child.endSaga()
-          childResults.push({ pageNumber: i, status: "aborted" })
-        }
-      }
+      // Start but don't complete generateEmbeddings (shows active state)
+      await processSaga.startTask("generateEmbeddings")
+
+      // Leave processContent task incomplete to show "in progress" state
+      childResults.push({ pageNumber: i, status: "active" })
+    } else if (i === 4) {
+      // Failed and compensating child saga
+      await child.startTask("fetchContent")
+      await child.endTask("fetchContent", {
+        html: `<html><title>Page ${i}</title></html>`,
+        fetchedAt: new Date(),
+      })
+
+      await child.startTask("parseContent")
+      await child.endTask("parseContent", {
+        title: `Page ${i}`,
+        wordCount: 140,
+      })
+
+      await child.startTask("processContent")
+      await child.endTask("processContent", { processed: true })
+
+      await child.startTask("saveToDatabase")
+      await child.endTask("saveToDatabase", {
+        saved: true,
+        savedAt: new Date(),
+      })
+
+      // Abort and compensate
+      await child.abortSaga()
+      await child.startCompensatingTask("saveToDatabase", {})
+      await child.endCompensatingTask("saveToDatabase", { deleted: true })
+      await child.startCompensatingTask("processContent", {})
+      await child.endCompensatingTask("processContent", { cleared: true })
+      await child.startCompensatingTask("parseContent", {})
+      await child.endCompensatingTask("parseContent", { cleared: true })
+      await child.startCompensatingTask("fetchContent", {})
+      await child.endCompensatingTask("fetchContent", { cleared: true })
+      await child.endSaga()
+      childResults.push({ pageNumber: i, status: "aborted" })
     }
-
-    // Complete parent saga tasks
-    await parent.endTask("crawlAllPages", { childResults })
-    await parent.startTask("aggregateResults")
-    
-    const successCount = childResults.filter(r => r.status === "completed").length
-    const failureCount = childResults.filter(r => r.status === "aborted").length
-    const activeCount = childResults.filter(r => r.status === "active").length
-    
-    await parent.endTask("aggregateResults", {
-      total: childResults.length,
-      success: successCount,
-      failed: failureCount,
-      active: activeCount,
-      successRate: (successCount / childResults.length) * 100,
-    })
-    
-    // Leave parent saga incomplete to show it's still active
-    // This demonstrates parent saga monitoring child sagas
   }
+
+  // Complete parent saga tasks
+  await parent.endTask("crawlAllPages", { childResults })
+  await parent.startTask("aggregateResults")
+
+  const successCount = childResults.filter(
+    (r) => r.status === "completed"
+  ).length
+  const failureCount = childResults.filter((r) => r.status === "aborted").length
+  const activeCount = childResults.filter((r) => r.status === "active").length
+
+  await parent.endTask("aggregateResults", {
+    total: childResults.length,
+    success: successCount,
+    failed: failureCount,
+    active: activeCount,
+    successRate: (successCount / childResults.length) * 100,
+  })
 
   console.log("✓ Created nested sagas example:")
   console.log("  - 1 parent saga (crawl-example-com)")
@@ -329,7 +293,7 @@ async function createHangingSagasExample() {
       const oldDate = new Date()
       oldDate.setDate(oldDate.getDate() - daysAgo)
       log.sagas[sagaId].createdAt = oldDate
-      
+
       // Also update the first message timestamp (StartSaga message)
       if (log.sagas[sagaId].messages && log.sagas[sagaId].messages.length > 0) {
         log.sagas[sagaId].messages[0].timestamp = oldDate
@@ -338,118 +302,102 @@ async function createHangingSagasExample() {
   }
 
   // Create hanging saga 1: Stuck in payment processing (3 days old)
-  const hanging1Result = await coordinator.createSaga("order-hanging-001", {
+  const saga1 = await coordinator.createSaga("order-hanging-001", {
     orderId: "order-hanging-001",
     amount: 350,
     customerId: "cust-999",
   })
 
-  if (hanging1Result.isOk()) {
-    const saga = hanging1Result.data as Saga<any>
-    await saga.startTask("processPayment")
-    // Leave stuck at payment processing
-    setOldTimestamp("order-hanging-001", 3) // 3 days ago
-  }
+  await saga1.startTask("processPayment")
+  // Leave stuck at payment processing
+  setOldTimestamp("order-hanging-001", 3) // 3 days ago
 
   // Create hanging saga 2: Stuck waiting for external service (2 days old)
-  const hanging2Result = await coordinator.createSaga("order-hanging-002", {
+  const saga2 = await coordinator.createSaga("order-hanging-002", {
     orderId: "order-hanging-002",
     amount: 750,
     customerId: "cust-888",
   })
 
-  if (hanging2Result.isOk()) {
-    const saga = hanging2Result.data as Saga<any>
-    await saga.startTask("processPayment")
-    await saga.endTask("processPayment", { paymentId: "pay_delayed_001" })
-    await saga.startTask("reserveInventory")
-    // Stuck waiting for inventory service
-    setOldTimestamp("order-hanging-002", 2) // 2 days ago
-  }
+  await saga2.startTask("processPayment")
+  await saga2.endTask("processPayment", { paymentId: "pay_delayed_001" })
+  await saga2.startTask("reserveInventory")
+  // Stuck waiting for inventory service
+  setOldTimestamp("order-hanging-002", 2) // 2 days ago
 
   // Create hanging saga 3: Long-running batch job (5 days old)
-  const hanging3Result = await coordinator.createSaga("batch-export-001", {
+  const saga3 = await coordinator.createSaga("batch-export-001", {
     jobId: "batch-export-001",
     recordCount: 1000000,
     exportType: "full",
   })
 
-  if (hanging3Result.isOk()) {
-    const saga = hanging3Result.data as Saga<any>
-    await saga.startTask("prepareExport")
-    await saga.endTask("prepareExport", { prepared: true })
-    await saga.startTask("exportData")
-    // Stuck in long-running export
-    setOldTimestamp("batch-export-001", 5) // 5 days ago
-  }
+  await saga3.startTask("prepareExport")
+  await saga3.endTask("prepareExport", { prepared: true })
+  await saga3.startTask("exportData")
+  // Stuck in long-running export
+  setOldTimestamp("batch-export-001", 5) // 5 days ago
 
   // Create hanging saga 4: With child sagas - Parent stuck (4 days old)
   const hangingParentId = "migration-parent-001"
-  const hangingParentResult = await coordinator.createSaga(hangingParentId, {
+  const parent = await coordinator.createSaga(hangingParentId, {
     migrationType: "database",
     tables: 50,
   })
 
-  if (hangingParentResult.isOk()) {
-    const parent = hangingParentResult.data as Saga<any>
-    await parent.startTask("planMigration")
-    await parent.endTask("planMigration", { planned: true })
-    await parent.startTask("executeMigration")
-    
-    // Create a few child sagas (some completed, some stuck)
-    for (let i = 1; i <= 3; i++) {
-      const childId = `${hangingParentId}-table-${i}`
-      const childResult = await coordinator.createSaga(
-        childId,
-        { tableName: `users_${i}`, rowCount: 10000 },
-        { parentSagaId: hangingParentId, parentTaskId: "executeMigration" }
-      )
+  await parent.startTask("planMigration")
+  await parent.endTask("planMigration", { planned: true })
+  await parent.startTask("executeMigration")
 
-      if (childResult.isOk()) {
-        const child = childResult.data as Saga<any>
-        await child.startTask("backupTable")
-        await child.endTask("backupTable", { backedUp: true })
-        
-        if (i === 1) {
-          // First child completed
-          await child.startTask("migrateData")
-          await child.endTask("migrateData", { migrated: true })
-          await child.endSaga()
-        } else {
-          // Other children stuck at migration
-          await child.startTask("migrateData")
-          setOldTimestamp(childId, 4) // Same age as parent
-        }
-      }
+  // Create a few child sagas (some completed, some stuck)
+  for (let i = 1; i <= 3; i++) {
+    const childId = `${hangingParentId}-table-${i}`
+    const child = await coordinator.createSaga(
+      childId,
+      { tableName: `users_${i}`, rowCount: 10000 },
+      { parentSagaId: hangingParentId, parentTaskId: "executeMigration" }
+    )
+
+    await child.startTask("backupTable")
+    await child.endTask("backupTable", { backedUp: true })
+
+    if (i === 1) {
+      // First child completed
+      await child.startTask("migrateData")
+      await child.endTask("migrateData", { migrated: true })
+      await child.endSaga()
+    } else {
+      // Other children stuck at migration
+      await child.startTask("migrateData")
+      setOldTimestamp(childId, 4) // Same age as parent
     }
-    
-    // Parent still waiting for children
-    setOldTimestamp(hangingParentId, 4) // 4 days ago
   }
 
+  // Parent still waiting for children
+  setOldTimestamp(hangingParentId, 4) // 4 days ago
+
   // Create hanging saga 5: Recently crossed 24h threshold (1.1 days old)
-  const hanging5Result = await coordinator.createSaga("order-hanging-003", {
+  const saga5 = await coordinator.createSaga("order-hanging-003", {
     orderId: "order-hanging-003",
     amount: 150,
     customerId: "cust-777",
   })
 
-  if (hanging5Result.isOk()) {
-    const saga = hanging5Result.data as Saga<any>
-    await saga.startTask("processPayment")
-    await saga.endTask("processPayment", { paymentId: "pay_recent_001" })
-    await saga.startTask("reserveInventory")
-    await saga.endTask("reserveInventory", { reservationId: "res_recent_001" })
-    await saga.startTask("sendEmail")
-    // Stuck sending email just over 24 hours
-    setOldTimestamp("order-hanging-003", 1.1) // 1.1 days ago (26.4 hours)
-  }
+  await saga5.startTask("processPayment")
+  await saga5.endTask("processPayment", { paymentId: "pay_recent_001" })
+  await saga5.startTask("reserveInventory")
+  await saga5.endTask("reserveInventory", { reservationId: "res_recent_001" })
+  await saga5.startTask("sendEmail")
+  // Stuck sending email just over 24 hours
+  setOldTimestamp("order-hanging-003", 1.1) // 1.1 days ago (26.4 hours)
 
   console.log("✓ Created hanging sagas example:")
   console.log("  - order-hanging-001: 3 days old (stuck at payment)")
   console.log("  - order-hanging-002: 2 days old (stuck waiting for inventory)")
   console.log("  - batch-export-001: 5 days old (long-running export)")
-  console.log("  - migration-parent-001: 4 days old (parent with stuck children)")
+  console.log(
+    "  - migration-parent-001: 4 days old (parent with stuck children)"
+  )
   console.log("  - order-hanging-003: 26 hours old (just crossed threshold)")
   console.log("  Total: 5 hanging sagas + 3 child migration sagas (2 hanging)")
 }
@@ -588,9 +536,13 @@ async function start() {
       console.log(`📊 Saga Dashboard: http://localhost:${port}/admin/sagas`)
       console.log("\nExample sagas have been created for demonstration.")
       console.log("- Regular sagas: order-001, order-002, order-003")
-      console.log("- Nested sagas: crawl-example-com (parent) with 5 child sagas + 5 nested children")
+      console.log(
+        "- Nested sagas: crawl-example-com (parent) with 5 child sagas + 5 nested children"
+      )
       console.log("  Total: 11 sagas demonstrating 3 levels of nesting")
-      console.log("- Hanging sagas: 5 root sagas + 2 child sagas (running > 24 hours)")
+      console.log(
+        "- Hanging sagas: 5 root sagas + 2 child sagas (running > 24 hours)"
+      )
       console.log("  Check the 'Hanging Sagas' tab in the dashboard!\n")
     })
   } catch (error) {

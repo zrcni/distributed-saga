@@ -59,10 +59,7 @@ describe("ReadOnlySaga in callbacks", () => {
       .end()
     
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test-saga-id", { initial: "data" })
-    if (!result.isOk()) throw new Error("Failed to create saga")
-    
-    const saga = result.data as Saga<{ initial: string }>
+    const saga = await coordinator.createSaga("test-saga-id", { initial: "data" }) as Saga<{ initial: string }>
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDef)
     
@@ -113,10 +110,7 @@ describe("ReadOnlySaga in callbacks", () => {
       .end()
     
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test-saga-id", { initial: "data" })
-    if (!result.isOk()) throw new Error("Failed to create saga")
-    
-    const saga = result.data as Saga<{ initial: string }>
+    const saga = await coordinator.createSaga("test-saga-id", { initial: "data" }) as Saga<{ initial: string }>
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDef)
     
@@ -152,10 +146,7 @@ describe("ReadOnlySaga in callbacks", () => {
       .end()
     
     const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-    const result = await coordinator.createSaga("test-saga-id", { initial: "data" })
-    if (!result.isOk()) throw new Error("Failed to create saga")
-    
-    const saga = result.data as Saga<{ initial: string }>
+    const saga = await coordinator.createSaga("test-saga-id", { initial: "data" }) as Saga<{ initial: string }>
     const orchestrator = new SagaOrchestrator()
     await orchestrator.run(saga, sagaDef)
     

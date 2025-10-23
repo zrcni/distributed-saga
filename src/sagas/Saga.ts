@@ -4,7 +4,6 @@ import EventEmitter from "events"
 import { SagaMessage, SagaMessageType } from "./SagaMessage"
 import { SagaState } from "./SagaState"
 import { updateSagaState, validateSagaUpdate } from "./saga-state-update"
-import { Result, ResultError, ResultOk } from "@/Result"
 import { timeout } from "@/utils"
 import { SagaLog } from "./types"
 import { ReadOnlySaga } from "./saga-definition/types"
@@ -137,32 +136,23 @@ export class Saga<StartPayload = unknown> {
     )
   }
 
-  async logMessage(msg: SagaMessage) {
+  async logMessage(msg: SagaMessage): Promise<void> {
     const error = validateSagaUpdate(this.state, msg)
     if (error) {
-      return Result.error(error)
+      throw error
     }
 
-    const logResult = await this.log.logMessage(msg)
-    if (logResult.isError()) {
-      return logResult
-    }
+    await this.log.logMessage(msg)
 
-    return updateSagaState(this.state, msg)
+    updateSagaState(this.state, msg)
   }
 
-  async updateSagaState(msg: SagaMessage): Promise<Result> {
-    const result = await addMessage(this.emitter, msg)
-
-    if (result.isError()) {
-      return result
-    }
+  async updateSagaState(msg: SagaMessage): Promise<void> {
+    await addMessage(this.emitter, msg)
 
     if (msg.msgType === SagaMessageType.EndSaga) {
       this.loopPromise?.cancel()
     }
-
-    return Result.ok()
   }
 
   updateSagaStateLoop() {
@@ -179,15 +169,19 @@ export class Saga<StartPayload = unknown> {
   }
 
   async handleUpdate(msg: SagaMessage) {
-    const result = await this.logMessage(msg)
-    this.emitter.emit(`message:${msg.taskId}`, result)
+    try {
+      await this.logMessage(msg)
+      this.emitter.emit(`message:${msg.taskId}`, null)
+    } catch (error) {
+      this.emitter.emit(`message:${msg.taskId}`, error)
+    }
   }
 
   static async rehydrateSaga<D = unknown>(
     sagaId: string,
     state: SagaState<D>,
     log: SagaLog
-  ) {
+  ): Promise<Saga<D>> {
     const saga = new Saga<D>(sagaId, state, log)
 
     if (!state.isSagaCompleted()) {
@@ -203,26 +197,29 @@ export class Saga<StartPayload = unknown> {
     log: SagaLog,
     parentSagaId: string | null = null,
     parentTaskId: string | null = null
-  ): Promise<ResultOk<Saga<D>> | ResultError> {
+  ): Promise<Saga<D>> {
     const sagaState = SagaState.create<D>(sagaId, job, parentSagaId, parentTaskId)
 
-    const result = await log.startSaga<D>(sagaId, job, parentSagaId, parentTaskId)
-    if (result.isError()) {
-      return result
-    }
+    await log.startSaga<D>(sagaId, job, parentSagaId, parentTaskId)
 
     const saga = new Saga<D>(sagaId, sagaState, log)
 
     saga.updateSagaStateLoop()
 
-    return Result.ok(saga)
+    return saga
   }
 }
 
 function addMessage(emitter: EventEmitter, msg: SagaMessage) {
   const promise = timeout(
-    new Promise<Result>((resolve) => {
-      emitter.once(`message:${msg.taskId}`, resolve)
+    new Promise<void>((resolve, reject) => {
+      emitter.once(`message:${msg.taskId}`, (error) => {
+        if (error) {
+          reject(error)
+        } else {
+          resolve()
+        }
+      })
     }),
     ms("5s")
   )

@@ -43,21 +43,12 @@ export class SagaAdapter implements ISagaAdapter {
   }
 
   async getSagaIds(): Promise<string[]> {
-    const result = await this.coordinator.getActiveSagaIds();
-    if (result.isError()) {
-      throw new Error('Failed to get active saga IDs');
-    }
-    return result.data;
+    return await this.coordinator.getActiveSagaIds();
   }
 
   async getSagaInfo(sagaId: string): Promise<SagaInfo | null> {
     try {
-      const messagesResult = await this.coordinator.log.getMessages(sagaId);
-      if (messagesResult.isError()) {
-        return null;
-      }
-
-      const messages = messagesResult.data;
+      const messages = await this.coordinator.log.getMessages(sagaId);
       if (messages.length === 0) {
         return null;
       }
@@ -172,11 +163,7 @@ export class SagaAdapter implements ISagaAdapter {
 
   private async getChildSagaIds(parentSagaId: string): Promise<string[]> {
     try {
-      const result = await this.coordinator.getChildSagaIds(parentSagaId);
-      if (result.isError()) {
-        return [];
-      }
-      return result.data;
+      return await this.coordinator.getChildSagaIds(parentSagaId);
     } catch (error) {
       return [];
     }
@@ -188,11 +175,7 @@ export class SagaAdapter implements ISagaAdapter {
     }
 
     // Use the coordinator's method to recursively abort saga and all children
-    const abortResult = await this.coordinator.abortSagaWithChildren(sagaId);
-
-    if (abortResult.isError()) {
-      throw new Error('Failed to abort saga and its children');
-    }
+    await this.coordinator.abortSagaWithChildren(sagaId);
   }
 
   async retrySaga(sagaId: string): Promise<void> {
@@ -212,11 +195,7 @@ export class SagaAdapter implements ISagaAdapter {
     }
 
     // Use the coordinator's method to recursively delete saga and all children
-    const deleteResult = await this.coordinator.deleteSagaWithChildren(sagaId);
-
-    if (deleteResult.isError()) {
-      throw new Error('Failed to delete saga and its children');
-    }
+    await this.coordinator.deleteSagaWithChildren(sagaId);
   }
 
   setVisibilityGuard(guard: (req: SagaBoardRequest) => boolean): void {

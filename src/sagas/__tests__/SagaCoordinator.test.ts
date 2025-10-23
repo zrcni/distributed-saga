@@ -2,7 +2,6 @@ import { SagaCoordinator } from "../SagaCoordinator"
 import { InMemorySagaLog } from "../InMemorySagaLog"
 import { SagaRecoveryType } from "../SagaRecovery"
 import { SagaMessage, SagaMessageType } from "../SagaMessage"
-import { Result } from "@/Result"
 import { SagaLog } from "../types"
 import { Saga } from "../Saga"
 
@@ -37,27 +36,20 @@ describe("SagaCoordinator", () => {
 
       const result = await coordinator.createSaga(sagaId, jobData)
 
-      expect(result).toBeOkResult()
-      expect(result.isOk()).toBe(true)
-      if (result.isError()) return
-
-      expect(result.data).toBeInstanceOf(Saga)
-      expect(result.data.sagaId).toBe(sagaId)
-      expect(await result.data.getJob()).toEqual(jobData)
+      expect(result).toBeInstanceOf(Saga)
+      expect(result.sagaId).toBe(sagaId)
+      expect(await result.getJob()).toEqual(jobData)
     })
 
     it("should return error when saga with same id already exists", async () => {
       const sagaId = "duplicate-saga"
       const jobData = { test: "data" }
 
-      const result1 = await coordinator.createSaga(sagaId, jobData)
-      expect(result1).toBeOkResult()
+      await coordinator.createSaga(sagaId, jobData)
 
-      const result2 = await coordinator.createSaga(sagaId, jobData)
-      expect(result2.isError()).toBe(true)
-      if (!result2.isError()) return
-
-      expect(result2.data.message).toContain("already been started")
+      await expect(
+        coordinator.createSaga(sagaId, jobData)
+      ).rejects.toThrow("already been started")
     })
 
     it("should handle different data types for job", async () => {
@@ -65,18 +57,14 @@ describe("SagaCoordinator", () => {
         "saga-string",
         "string-data"
       )
-      expect(stringResult).toBeOkResult()
 
       const numberResult = await coordinator.createSaga("saga-number", 42)
-      expect(numberResult).toBeOkResult()
 
       const objectResult = await coordinator.createSaga("saga-object", {
         key: "value",
       })
-      expect(objectResult).toBeOkResult()
 
       const arrayResult = await coordinator.createSaga("saga-array", [1, 2, 3])
-      expect(arrayResult).toBeOkResult()
     })
   })
 
@@ -84,10 +72,8 @@ describe("SagaCoordinator", () => {
     it("should return empty array when no sagas exist", async () => {
       const result = await coordinator.getActiveSagaIds()
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data).toEqual([])
+      expect(result).toEqual([])
     })
 
     it("should return array with single saga id", async () => {
@@ -96,10 +82,8 @@ describe("SagaCoordinator", () => {
 
       const result = await coordinator.getActiveSagaIds()
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data).toEqual([sagaId])
+      expect(result).toEqual([sagaId])
     })
 
     it("should return all active saga ids", async () => {
@@ -113,13 +97,11 @@ describe("SagaCoordinator", () => {
 
       const result = await coordinator.getActiveSagaIds()
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data).toHaveLength(3)
-      expect(result.data).toContain(sagaId1)
-      expect(result.data).toContain(sagaId2)
-      expect(result.data).toContain(sagaId3)
+      expect(result).toHaveLength(3)
+      expect(result).toContain(sagaId1)
+      expect(result).toContain(sagaId2)
+      expect(result).toContain(sagaId3)
     })
   })
 
@@ -131,10 +113,8 @@ describe("SagaCoordinator", () => {
 
         // Create and set up initial saga
         const createResult = await coordinator.createSaga(sagaId, jobData)
-        expect(createResult).toBeOkResult()
-        if (createResult.isError()) return
 
-        const saga = createResult.data
+        const saga = createResult
         await saga.startTask("task-1", { step: 1 })
         await saga.endTask("task-1", { result: "success" })
 
@@ -144,21 +124,17 @@ describe("SagaCoordinator", () => {
           SagaRecoveryType.ForwardRecovery
         )
 
-        expect(recoveryResult).toBeOkResult()
-        if (recoveryResult.isError()) return
 
-        expect(recoveryResult.data).toBeInstanceOf(Saga)
-        expect(recoveryResult.data.sagaId).toBe(sagaId)
-        expect(await recoveryResult.data.isTaskCompleted("task-1")).toBe(true)
+        expect(recoveryResult).toBeInstanceOf(Saga)
+        expect(recoveryResult.sagaId).toBe(sagaId)
+        expect(await recoveryResult.isTaskCompleted("task-1")).toBe(true)
       })
 
       it("should recover saga with multiple completed tasks", async () => {
         const sagaId = "multi-task-saga"
         const createResult = await coordinator.createSaga(sagaId, {})
-        expect(createResult).toBeOkResult()
-        if (createResult.isError()) return
 
-        const saga = createResult.data
+        const saga = createResult
         await saga.startTask("task-1", {})
         await saga.endTask("task-1", {})
         await saga.startTask("task-2", {})
@@ -169,11 +145,9 @@ describe("SagaCoordinator", () => {
           SagaRecoveryType.ForwardRecovery
         )
 
-        expect(recoveryResult).toBeOkResult()
-        if (recoveryResult.isError()) return
 
-        expect(await recoveryResult.data.isTaskCompleted("task-1")).toBe(true)
-        expect(await recoveryResult.data.isTaskCompleted("task-2")).toBe(true)
+        expect(await recoveryResult.isTaskCompleted("task-1")).toBe(true)
+        expect(await recoveryResult.isTaskCompleted("task-2")).toBe(true)
       })
     })
 
@@ -181,10 +155,8 @@ describe("SagaCoordinator", () => {
       it("should abort saga when it is not in a safe state", async () => {
         const sagaId = "unsafe-saga"
         const createResult = await coordinator.createSaga(sagaId, {})
-        expect(createResult).toBeOkResult()
-        if (createResult.isError()) return
 
-        const saga = createResult.data
+        const saga = createResult
         // Start a task but don't complete it (unsafe state)
         await saga.startTask("incomplete-task", {})
 
@@ -193,19 +165,15 @@ describe("SagaCoordinator", () => {
           SagaRecoveryType.RollbackRecovery
         )
 
-        expect(recoveryResult).toBeOkResult()
-        if (recoveryResult.isError()) return
 
-        expect(await recoveryResult.data.isSagaAborted()).toBe(true)
+        expect(await recoveryResult.isSagaAborted()).toBe(true)
       })
 
       it("should not abort saga when it is in a safe state", async () => {
         const sagaId = "safe-saga"
         const createResult = await coordinator.createSaga(sagaId, {})
-        expect(createResult).toBeOkResult()
-        if (createResult.isError()) return
 
-        const saga = createResult.data
+        const saga = createResult
         // Complete the task (safe state)
         await saga.startTask("complete-task", {})
         await saga.endTask("complete-task", {})
@@ -215,19 +183,15 @@ describe("SagaCoordinator", () => {
           SagaRecoveryType.RollbackRecovery
         )
 
-        expect(recoveryResult).toBeOkResult()
-        if (recoveryResult.isError()) return
 
-        expect(await recoveryResult.data.isSagaAborted()).toBe(false)
+        expect(await recoveryResult.isSagaAborted()).toBe(false)
       })
 
       it("should not abort saga that is already aborted", async () => {
         const sagaId = "aborted-saga"
         const createResult = await coordinator.createSaga(sagaId, {})
-        expect(createResult).toBeOkResult()
-        if (createResult.isError()) return
 
-        const saga = createResult.data
+        const saga = createResult
         await saga.abortSaga()
 
         const recoveryResult = await coordinator.recoverSagaState(
@@ -235,34 +199,24 @@ describe("SagaCoordinator", () => {
           SagaRecoveryType.RollbackRecovery
         )
 
-        expect(recoveryResult).toBeOkResult()
-        if (recoveryResult.isError()) return
 
-        expect(await recoveryResult.data.isSagaAborted()).toBe(true)
+        expect(await recoveryResult.isSagaAborted()).toBe(true)
       })
     })
 
     it("should return error when saga does not exist", async () => {
       const sagaId = "non-existent-saga"
 
-      const recoveryResult = await coordinator.recoverSagaState(
-        sagaId,
-        SagaRecoveryType.ForwardRecovery
-      )
-
-      expect(recoveryResult.isError()).toBe(true)
-      if (!recoveryResult.isError()) return
-
-      expect(recoveryResult.data.message).toContain("has not started yet")
+      await expect(
+        coordinator.recoverSagaState(sagaId, SagaRecoveryType.ForwardRecovery)
+      ).rejects.toThrow("has not started yet")
     })
 
     it("should handle recovery of completed saga", async () => {
       const sagaId = "completed-saga"
       const createResult = await coordinator.createSaga(sagaId, {})
-      expect(createResult).toBeOkResult()
-      if (createResult.isError()) return
 
-      const saga = createResult.data
+      const saga = createResult
       await saga.startTask("task-1", {})
       await saga.endTask("task-1", {})
       await saga.endSaga()
@@ -272,55 +226,49 @@ describe("SagaCoordinator", () => {
         SagaRecoveryType.ForwardRecovery
       )
 
-      expect(recoveryResult).toBeOkResult()
-      if (recoveryResult.isError()) return
 
-      expect(await recoveryResult.data.isSagaCompleted()).toBe(true)
+      expect(await recoveryResult.isSagaCompleted()).toBe(true)
     })
   })
 
   describe("integration with custom SagaLog", () => {
     it("should work with custom saga log implementation", async () => {
       const customLog: SagaLog = {
-        startSaga: jest.fn().mockResolvedValue(Result.ok()),
-        logMessage: jest.fn().mockResolvedValue(Result.ok()),
-        getMessages: jest.fn().mockResolvedValue(Result.ok([])),
-        getActiveSagaIds: jest.fn().mockResolvedValue(Result.ok(["saga-1"])),
-        getChildSagaIds: jest.fn().mockResolvedValue(Result.ok([])),
-        deleteSaga: jest.fn().mockResolvedValue(Result.ok()),
+        startSaga: jest.fn().mockResolvedValue(undefined),
+        logMessage: jest.fn().mockResolvedValue(undefined),
+        getMessages: jest.fn().mockResolvedValue([]),
+        getActiveSagaIds: jest.fn().mockResolvedValue(["saga-1"]),
+        getChildSagaIds: jest.fn().mockResolvedValue([]),
+        deleteSaga: jest.fn().mockResolvedValue(undefined),
       }
 
       const customCoordinator = new SagaCoordinator(customLog)
 
       const result = await customCoordinator.getActiveSagaIds()
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data).toEqual(["saga-1"])
+      expect(result).toEqual(["saga-1"])
       expect(customLog.getActiveSagaIds).toHaveBeenCalled()
     })
 
     it("should propagate errors from saga log", async () => {
       const errorLog: SagaLog = {
-        startSaga: jest
-          .fn()
-          .mockResolvedValue(Result.error(new Error("Log error"))),
-        logMessage: jest.fn().mockResolvedValue(Result.ok()),
-        getMessages: jest.fn().mockResolvedValue(Result.ok([])),
-        getActiveSagaIds: jest
-          .fn()
-          .mockResolvedValue(Result.error(new Error("Get IDs error"))),
-        getChildSagaIds: jest.fn().mockResolvedValue(Result.ok([])),
-        deleteSaga: jest.fn().mockResolvedValue(Result.ok()),
+        startSaga: jest.fn().mockRejectedValue(new Error("Start saga error")),
+        logMessage: jest.fn().mockResolvedValue(undefined),
+        getMessages: jest.fn().mockResolvedValue([]),
+        getActiveSagaIds: jest.fn().mockRejectedValue(new Error("Get IDs error")),
+        getChildSagaIds: jest.fn().mockResolvedValue([]),
+        deleteSaga: jest.fn().mockResolvedValue(undefined),
       }
 
       const errorCoordinator = new SagaCoordinator(errorLog)
 
-      const createResult = await errorCoordinator.createSaga("test-saga", {})
-      expect(createResult.isError()).toBe(true)
+      await expect(errorCoordinator.createSaga("test-saga", {})).rejects.toThrow(
+        "Start saga error"
+      )
 
-      const getIdsResult = await errorCoordinator.getActiveSagaIds()
-      expect(getIdsResult.isError()).toBe(true)
+      await expect(errorCoordinator.getActiveSagaIds()).rejects.toThrow(
+        "Get IDs error"
+      )
     })
   })
 
@@ -337,17 +285,13 @@ describe("SagaCoordinator", () => {
       const results = await Promise.all(sagaPromises)
 
       results.forEach((result, index) => {
-        expect(result).toBeOkResult()
-        if (result.isError()) return
 
-        expect(result.data.sagaId).toBe(`concurrent-saga-${index}`)
+        expect(result.sagaId).toBe(`concurrent-saga-${index}`)
       })
 
       const activeIdsResult = await coordinator.getActiveSagaIds()
-      expect(activeIdsResult).toBeOkResult()
-      if (activeIdsResult.isError()) return
 
-      expect(activeIdsResult.data).toHaveLength(10)
+      expect(activeIdsResult).toHaveLength(10)
     })
   })
 
@@ -370,10 +314,8 @@ describe("SagaCoordinator", () => {
         jobData
       )
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      const retrievedJob = await result.data.getJob()
+      const retrievedJob = await result.getJob()
       expect(retrievedJob).toEqual(jobData)
       expect(retrievedJob.orderId).toBe("order-789")
       expect(retrievedJob.amount).toBe(250.5)
@@ -388,13 +330,11 @@ describe("SagaCoordinator", () => {
 
       const result = await coordinator.recoverOrCreate(sagaId, jobData)
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data).toBeInstanceOf(Saga)
-      expect(result.data.sagaId).toBe(sagaId)
+      expect(result).toBeInstanceOf(Saga)
+      expect(result.sagaId).toBe(sagaId)
       
-      const retrievedJob = await result.data.getJob()
+      const retrievedJob = await result.getJob()
       expect(retrievedJob).toEqual(jobData)
     })
 
@@ -404,10 +344,8 @@ describe("SagaCoordinator", () => {
 
       // First, create a saga and add some tasks
       const createResult = await coordinator.createSaga(sagaId, jobData)
-      expect(createResult).toBeOkResult()
-      if (createResult.isError()) return
 
-      const saga = createResult.data
+      const saga = createResult
 
       // Start and complete a task
       await saga.startTask("task-1", { input: "data" })
@@ -420,17 +358,15 @@ describe("SagaCoordinator", () => {
         SagaRecoveryType.ForwardRecovery
       )
 
-      expect(recoverResult).toBeOkResult()
-      if (recoverResult.isError()) return
 
-      expect(recoverResult.data).toBeInstanceOf(Saga)
-      expect(recoverResult.data.sagaId).toBe(sagaId)
+      expect(recoverResult).toBeInstanceOf(Saga)
+      expect(recoverResult.sagaId).toBe(sagaId)
       
-      const recoveredJob = await recoverResult.data.getJob()
+      const recoveredJob = await recoverResult.getJob()
       expect(recoveredJob).toEqual(jobData)
       
       // Verify the task is still completed
-      expect(await recoverResult.data.isTaskCompleted("task-1")).toBe(true)
+      expect(await recoverResult.isTaskCompleted("task-1")).toBe(true)
     })
 
     it("should use default ForwardRecovery when recoveryType not specified", async () => {
@@ -439,21 +375,17 @@ describe("SagaCoordinator", () => {
 
       // Create saga and add a task
       const createResult = await coordinator.createSaga(sagaId, jobData)
-      expect(createResult).toBeOkResult()
-      if (createResult.isError()) return
 
-      const saga = createResult.data
+      const saga = createResult
       await saga.startTask("task-1", {})
       await saga.endTask("task-1", {})
 
       // Recover without specifying recovery type (should default to ForwardRecovery)
       const result = await coordinator.recoverOrCreate(sagaId, jobData)
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data.sagaId).toBe(sagaId)
-      expect(await result.data.isTaskCompleted("task-1")).toBe(true)
+      expect(result.sagaId).toBe(sagaId)
+      expect(await result.isTaskCompleted("task-1")).toBe(true)
     })
 
     it("should create new saga when recovery fails for non-existent saga", async () => {
@@ -467,13 +399,11 @@ describe("SagaCoordinator", () => {
         SagaRecoveryType.ForwardRecovery
       )
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data).toBeInstanceOf(Saga)
-      expect(result.data.sagaId).toBe(sagaId)
+      expect(result).toBeInstanceOf(Saga)
+      expect(result.sagaId).toBe(sagaId)
       
-      const retrievedJob = await result.data.getJob()
+      const retrievedJob = await result.getJob()
       expect(retrievedJob).toEqual(jobData)
     })
 
@@ -486,7 +416,6 @@ describe("SagaCoordinator", () => {
       const parentResult = await coordinator.createSaga(parentSagaId, {
         test: "parent",
       })
-      expect(parentResult).toBeOkResult()
 
       // Create child saga with parent reference
       const result = await coordinator.recoverOrCreate(
@@ -496,17 +425,13 @@ describe("SagaCoordinator", () => {
         { parentSagaId, parentTaskId: "test-task" }
       )
 
-      expect(result).toBeOkResult()
-      if (result.isError()) return
 
-      expect(result.data.sagaId).toBe(childSagaId)
+      expect(result.sagaId).toBe(childSagaId)
       
       // Verify the saga was created with parent reference
       const messages = await log.getMessages(childSagaId)
-      expect(messages).toBeOkResult()
-      if (messages.isError()) return
 
-      const startMessage = messages.data[0]
+      const startMessage = messages[0]
       expect(startMessage.parentSagaId).toBe(parentSagaId)
       expect(startMessage.parentTaskId).toBe("test-task")
     })
@@ -516,25 +441,21 @@ describe("SagaCoordinator", () => {
         "saga-string",
         "string-data"
       )
-      expect(stringResult).toBeOkResult()
 
       const numberResult = await coordinator.recoverOrCreate(
         "saga-number",
         42
       )
-      expect(numberResult).toBeOkResult()
 
       const objectResult = await coordinator.recoverOrCreate(
         "saga-object",
         { key: "value" }
       )
-      expect(objectResult).toBeOkResult()
 
       const arrayResult = await coordinator.recoverOrCreate(
         "saga-array",
         [1, 2, 3]
       )
-      expect(arrayResult).toBeOkResult()
     })
   })
 })

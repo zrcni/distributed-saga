@@ -1,4 +1,3 @@
-import { ResultError, ResultOk } from "@/Result"
 import { SagaMessage } from "./SagaMessage"
 
 /**
@@ -15,12 +14,12 @@ export interface SagaLog {
     job: D,
     parentSagaId?: string | null,
     parentTaskId?: string | null
-  ): Promise<ResultOk | ResultError>
-  logMessage(msg: SagaMessage): Promise<ResultOk | ResultError>
-  getMessages(sagaId: string): Promise<ResultOk<SagaMessage[]> | ResultError>
-  getActiveSagaIds(): Promise<ResultOk<string[]> | ResultError>
-  getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk<string[]> | ResultError>
-  deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk | ResultError> | ResultOk | ResultError
+  ): Promise<void>
+  logMessage(msg: SagaMessage): Promise<void>
+  getMessages(sagaId: string): Promise<SagaMessage[]>
+  getActiveSagaIds(): Promise<string[]>
+  getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<string[]>
+  deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): Promise<void>
   
   /**
    * Optional: Begin a transaction. Returns a session object that can be passed to other methods.

@@ -1,5 +1,4 @@
 import { SagaAlreadyRunningError, SagaNotRunningError } from "@/errors"
-import { Result, ResultError, ResultOk } from "@/Result"
 import { SagaLog, SagaLogTransactionOptions } from "./types"
 import { SagaCoordinator } from "./SagaCoordinator"
 import { SagaMessage } from "./SagaMessage"
@@ -22,32 +21,29 @@ export class MongoDBSagaLog implements SagaLog {
     this.collection = collection
   }
 
-  async getMessages(
-    sagaId: string
-  ): Promise<ResultOk<SagaMessage[]> | ResultError<SagaNotRunningError>> {
+  async getMessages(sagaId: string): Promise<SagaMessage[]> {
     try {
       const doc = await this.collection.findOne({ sagaId })
 
       if (!doc) {
-        return Result.error(
-          new SagaNotRunningError("saga has not started yet", {
-            sagaId,
-          })
-        )
+        throw new SagaNotRunningError("saga has not started yet", {
+          sagaId,
+        })
       }
 
-      return Result.ok(doc.messages)
+      return doc.messages
     } catch (error) {
-      return Result.error(
-        new SagaNotRunningError("failed to get messages", {
-          sagaId,
-          error: error instanceof Error ? error.message : String(error),
-        })
-      )
+      if (error instanceof SagaNotRunningError) {
+        throw error
+      }
+      throw new SagaNotRunningError("failed to get messages", {
+        sagaId,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 
-  async getActiveSagaIds(): Promise<ResultOk<string[]>> {
+  async getActiveSagaIds(): Promise<string[]> {
     try {
       const docs = await this.collection
         .find({})
@@ -55,13 +51,14 @@ export class MongoDBSagaLog implements SagaLog {
         .toArray()
       // Ensure _id is converted to string in case it's an ObjectId
       const sagaIds = docs.map((doc) => doc.sagaId)
-      return Result.ok(sagaIds)
+      return sagaIds
     } catch (error) {
-      return Result.ok([])
+      // Return empty array on error - this method is often used for listing
+      return []
     }
   }
 
-  async getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk<string[]>> {
+  async getChildSagaIds(parentSagaId: string, options?: SagaLogTransactionOptions): Promise<string[]> {
     try {
       const findOptions = options?.session ? { session: options.session as ClientSession } : {}
       const docs = await this.collection
@@ -69,9 +66,10 @@ export class MongoDBSagaLog implements SagaLog {
         .project<Pick<SagaDocument, "sagaId">>({ sagaId: 1 })
         .toArray()
       const childIds = docs.map((doc) => doc.sagaId)
-      return Result.ok(childIds)
+      return childIds
     } catch (error) {
-      return Result.ok([])
+      // Return empty array on error
+      return []
     }
   }
 
@@ -80,16 +78,14 @@ export class MongoDBSagaLog implements SagaLog {
     job: D,
     parentSagaId: string | null = null,
     parentTaskId: string | null = null
-  ): Promise<ResultOk | ResultError<SagaAlreadyRunningError>> {
+  ): Promise<void> {
     try {
       const existingDoc = await this.collection.findOne({ sagaId })
 
       if (existingDoc) {
-        return Result.error(
-          new SagaAlreadyRunningError("saga has already been started", {
-            sagaId,
-          })
-        )
+        throw new SagaAlreadyRunningError("saga has already been started", {
+          sagaId,
+        })
       }
 
       const msg = SagaMessage.createStartSagaMessage(sagaId, job, parentSagaId, parentTaskId)
@@ -104,21 +100,18 @@ export class MongoDBSagaLog implements SagaLog {
         parentSagaId,
         parentTaskId,
       })
-
-      return Result.ok()
     } catch (error) {
-      return Result.error(
-        new SagaAlreadyRunningError("failed to start saga", {
-          sagaId,
-          error: error instanceof Error ? error.message : String(error),
-        })
-      )
+      if (error instanceof SagaAlreadyRunningError) {
+        throw error
+      }
+      throw new SagaAlreadyRunningError("failed to start saga", {
+        sagaId,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 
-  async logMessage(
-    msg: SagaMessage
-  ): Promise<ResultOk | ResultError<SagaNotRunningError>> {
+  async logMessage(msg: SagaMessage): Promise<void> {
     try {
       const result = await this.collection.updateOne(
         { sagaId: msg.sagaId },
@@ -129,23 +122,20 @@ export class MongoDBSagaLog implements SagaLog {
       )
 
       if (result.matchedCount === 0) {
-        return Result.error(
-          new SagaNotRunningError("saga has not started yet", {
-            sagaId: msg.sagaId,
-            taskId: msg.taskId,
-          })
-        )
-      }
-
-      return Result.ok()
-    } catch (error) {
-      return Result.error(
-        new SagaNotRunningError("failed to log message", {
+        throw new SagaNotRunningError("saga has not started yet", {
           sagaId: msg.sagaId,
           taskId: msg.taskId,
-          error: error instanceof Error ? error.message : String(error),
         })
-      )
+      }
+    } catch (error) {
+      if (error instanceof SagaNotRunningError) {
+        throw error
+      }
+      throw new SagaNotRunningError("failed to log message", {
+        sagaId: msg.sagaId,
+        taskId: msg.taskId,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 
@@ -163,18 +153,15 @@ export class MongoDBSagaLog implements SagaLog {
   /**
    * Clean up completed sagas
    */
-  async deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): Promise<ResultOk | ResultError> {
+  async deleteSaga(sagaId: string, options?: SagaLogTransactionOptions): Promise<void> {
     try {
       const deleteOptions = options?.session ? { session: options.session as ClientSession } : {}
       await this.collection.deleteOne({ sagaId }, deleteOptions)
-      return Result.ok()
     } catch (error) {
-      return Result.error(
-        new SagaNotRunningError("failed to delete saga", {
-          sagaId,
-          error: error instanceof Error ? error.message : String(error),
-        })
-      )
+      throw new SagaNotRunningError("failed to delete saga", {
+        sagaId,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 
@@ -182,20 +169,16 @@ export class MongoDBSagaLog implements SagaLog {
    * Delete sagas older than a specific date
    * Useful for cleaning up old completed or abandoned sagas
    */
-  async deleteOldSagas(
-    olderThan: Date
-  ): Promise<ResultOk<number> | ResultError> {
+  async deleteOldSagas(olderThan: Date): Promise<number> {
     try {
       const result = await this.collection.deleteMany({
         updatedAt: { $lt: olderThan },
       })
-      return Result.ok(result.deletedCount)
+      return result.deletedCount
     } catch (error) {
-      return Result.error(
-        new SagaNotRunningError("failed to delete old sagas", {
-          error: error instanceof Error ? error.message : String(error),
-        })
-      )
+      throw new SagaNotRunningError("failed to delete old sagas", {
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 
@@ -203,22 +186,18 @@ export class MongoDBSagaLog implements SagaLog {
    * Get sagas that haven't been updated since a specific date
    * Useful for finding stale or abandoned sagas
    */
-  async getStaleSagaIds(
-    olderThan: Date
-  ): Promise<ResultOk<string[]> | ResultError> {
+  async getStaleSagaIds(olderThan: Date): Promise<string[]> {
     try {
       const docs = await this.collection
         .find({ updatedAt: { $lt: olderThan } })
         .project<Pick<SagaDocument, "sagaId">>({ sagaId: 1 })
         .toArray()
       const sagaIds = docs.map((doc) => doc.sagaId)
-      return Result.ok(sagaIds)
+      return sagaIds
     } catch (error) {
-      return Result.error(
-        new SagaNotRunningError("failed to get stale saga IDs", {
-          error: error instanceof Error ? error.message : String(error),
-        })
-      )
+      throw new SagaNotRunningError("failed to get stale saga IDs", {
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 

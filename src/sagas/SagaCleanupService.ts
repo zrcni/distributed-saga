@@ -1,6 +1,5 @@
 import { SagaLog } from "./types"
 import { SagaMessage, SagaMessageType } from "./SagaMessage"
-import { Result } from "@/Result"
 
 export interface SagaCleanupOptions {
   /**
@@ -107,12 +106,7 @@ export class SagaCleanupService {
     let archivedCount = 0
 
     try {
-      const sagaIdsResult = await this.log.getActiveSagaIds()
-      if (sagaIdsResult.isError()) {
-        throw new Error("Failed to get saga IDs")
-      }
-
-      const sagaIds = sagaIdsResult.data
+      const sagaIds = await this.log.getActiveSagaIds()
 
       for (const sagaId of sagaIds) {
         try {
@@ -121,18 +115,14 @@ export class SagaCleanupService {
           if (shouldDelete) {
             // Archive before delete if callback provided
             if (this.options.archiveBeforeDelete) {
-              const messagesResult = await this.log.getMessages(sagaId)
-              if (messagesResult.isOk() && !messagesResult.isError()) {
-                await this.options.archiveBeforeDelete(sagaId, messagesResult.data as SagaMessage[])
-                archivedCount++
-              }
+              const messages = await this.log.getMessages(sagaId)
+              await this.options.archiveBeforeDelete(sagaId, messages)
+              archivedCount++
             }
 
             // Delete the saga
-            const deleteResult = await this.log.deleteSaga(sagaId)
-            if (deleteResult.isOk()) {
-              deletedCount++
-            }
+            await this.log.deleteSaga(sagaId)
+            deletedCount++
           }
         } catch (error) {
           this.options.onError?.(
@@ -153,23 +143,20 @@ export class SagaCleanupService {
    * Determine if a saga should be deleted
    */
   private async shouldDeleteSaga(sagaId: string): Promise<boolean> {
-    const messagesResult = await this.log.getMessages(sagaId)
-    if (messagesResult.isError()) {
-      return false
-    }
+    try {
+      const messages = await this.log.getMessages(sagaId)
+      
+      if (messages.length === 0) {
+        return false
+      }
 
-    const messages = messagesResult.data
-    if (messages.length === 0) {
-      return false
-    }
+      // Use custom filter if provided
+      if (this.options.shouldCleanupSaga) {
+        return this.options.shouldCleanupSaga(sagaId, messages)
+      }
 
-    // Use custom filter if provided
-    if (this.options.shouldCleanupSaga) {
-      return this.options.shouldCleanupSaga(sagaId, messages)
-    }
-
-    // Default behavior: check if saga is completed or aborted
-    const lastMessage = messages[messages.length - 1]
+      // Default behavior: check if saga is completed or aborted
+      const lastMessage = messages[messages.length - 1]
     const isCompleted = lastMessage.msgType === SagaMessageType.EndSaga
     const isAborted = lastMessage.msgType === SagaMessageType.AbortSaga
 
@@ -189,6 +176,9 @@ export class SagaCleanupService {
     }
 
     return false
+    } catch (error) {
+      return false
+    }
   }
 
   /**
@@ -199,28 +189,20 @@ export class SagaCleanupService {
     abortedToDelete: number
     activeTotal: number
   }> {
-    const sagaIdsResult = await this.log.getActiveSagaIds()
-    if (sagaIdsResult.isError()) {
-      return { completedToDelete: 0, abortedToDelete: 0, activeTotal: 0 }
-    }
+    try {
+      const sagaIds = await this.log.getActiveSagaIds()
+      let completedToDelete = 0
+      let abortedToDelete = 0
 
-    const sagaIds = sagaIdsResult.data
-    let completedToDelete = 0
-    let abortedToDelete = 0
+      for (const sagaId of sagaIds) {
+        try {
+          const messages = await this.log.getMessages(sagaId)
+          
+          if (messages.length === 0) {
+            continue
+          }
 
-    for (const sagaId of sagaIds) {
-      try {
-        const messagesResult = await this.log.getMessages(sagaId)
-        if (messagesResult.isError()) {
-          continue
-        }
-
-        const messages = messagesResult.data
-        if (messages.length === 0) {
-          continue
-        }
-
-        const lastMessage = messages[messages.length - 1]
+          const lastMessage = messages[messages.length - 1]
         const lastUpdate = lastMessage.timestamp
         const now = new Date()
         const ageMs = now.getTime() - lastUpdate.getTime()
@@ -243,6 +225,9 @@ export class SagaCleanupService {
       completedToDelete,
       abortedToDelete,
       activeTotal: sagaIds.length,
+    }
+    } catch (error) {
+      return { completedToDelete: 0, abortedToDelete: 0, activeTotal: 0 }
     }
   }
 }

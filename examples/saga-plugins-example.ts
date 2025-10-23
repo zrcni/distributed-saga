@@ -88,26 +88,25 @@ export async function basicPluginExample() {
 
   // Create saga
   const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
-  const sagaResult = await coordinator.createSaga("order-saga-001", {
-    orderId: "ORD-123",
-    amount: 99.99
-  })
-
-  if (!sagaResult.isOk()) {
-    console.error("Failed to create saga:", (sagaResult as any).data)
-    return
-  }
-
-  const saga = sagaResult.data as Saga<{ orderId: string; amount: number }>
-  await orchestrator.run(saga, sagaDefinition)
-
-  // Print statistics
-  console.log("\n=== Final Statistics ===")
-  console.log("\nLogger stats:")
-  console.log(`- Total logs: ${logger.getLogs().length}`)
   
-  console.log("\nTree stats:")
-  console.log(JSON.stringify(treeTracker.getStats(), null, 2))
+  try {
+    const saga = await coordinator.createSaga("order-saga-001", {
+      orderId: "ORD-123",
+      amount: 99.99
+    }) as Saga<{ orderId: string; amount: number }>
+
+    await orchestrator.run(saga, sagaDefinition)
+
+    // Print statistics
+    console.log("\n=== Final Statistics ===")
+    console.log("\nLogger stats:")
+    console.log(`- Total logs: ${logger.getLogs().length}`)
+    
+    console.log("\nTree stats:")
+    console.log(JSON.stringify(treeTracker.getStats(), null, 2))
+  } catch (error) {
+    console.error("Failed to run saga:", error)
+  }
 }
 
 // ============================================================================
@@ -205,31 +204,29 @@ export async function ecommerceExample() {
     totalAmount: 109.97
   }
 
-  const sagaResult = await coordinator.createSaga(
-    `order-saga-${orderData.orderId}`,
-    orderData
-  )
+  try {
+    const saga = await coordinator.createSaga(
+      `order-saga-${orderData.orderId}`,
+      orderData
+    ) as Saga<typeof orderData>
 
-  if (!sagaResult.isOk()) {
-    console.error("Failed to create saga:", (sagaResult as any).data)
-    return
+    await orchestrator.run(saga, orderSaga)
+
+    // Export various formats
+    console.log("\n=== Exports ===")
+    
+    console.log("\n1. Execution Tree (ASCII):")
+    console.log(treeTracker.exportAsASCII())
+    
+    console.log("\n2. Execution Tree (DOT/Graphviz):")
+    console.log(treeTracker.exportAsDOT())
+    
+    console.log("\n3. Recent Logs (JSON):")
+    const recentLogs = logger.getLogs().slice(-5)
+    console.log(JSON.stringify(recentLogs, null, 2))
+  } catch (error) {
+    console.error("Failed to run saga:", error)
   }
-
-  const saga = sagaResult.data as Saga<typeof orderData>
-  await orchestrator.run(saga, orderSaga)
-
-  // Export various formats
-  console.log("\n=== Exports ===")
-  
-  console.log("\n1. Execution Tree (ASCII):")
-  console.log(treeTracker.exportAsASCII())
-  
-  console.log("\n2. Execution Tree (DOT/Graphviz):")
-  console.log(treeTracker.exportAsDOT())
-  
-  console.log("\n3. Recent Logs (JSON):")
-  const recentLogs = logger.getLogs().slice(-5)
-  console.log(JSON.stringify(recentLogs, null, 2))
 }
 
 // ============================================================================

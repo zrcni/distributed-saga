@@ -146,17 +146,10 @@ async function runExample() {
     paymentMethod: "credit_card",
   }
 
-  const createResult = await coordinator.createSaga(sagaId, orderData)
-
-  if (createResult.isError()) {
-    console.error("Failed to create saga:", createResult.data)
-    return
-  }
-
-  const saga = createResult.data as Saga<OrderPayload>
-
-  // Execute the saga
   try {
+    const saga = await coordinator.createSaga(sagaId, orderData) as Saga<OrderPayload>
+
+    // Execute the saga
     await orchestrator.run(saga, orderSagaDefinition)
     console.log()
     console.log("=".repeat(60))
