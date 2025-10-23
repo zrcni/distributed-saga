@@ -1,6 +1,6 @@
 {
   "name": "@zrcni/distributed-saga",
-  "version": "0.0.6-alpha.1",
+  "version": "0.0.7-alpha.1",
   "author": "zrcni",
   "repository": {
     "type": "git",
