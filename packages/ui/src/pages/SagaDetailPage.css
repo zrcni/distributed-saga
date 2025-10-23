@@ -319,6 +319,14 @@
   cursor: help;
 }
 
+.optional-indicator {
+  margin-left: 8px;
+  font-size: 0.9rem;
+  color: #6c757d;
+  cursor: help;
+  opacity: 0.8;
+}
+
 .task-timestamps {
   display: flex;
   gap: 20px;

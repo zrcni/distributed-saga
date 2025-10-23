@@ -112,9 +112,9 @@ export class Saga<StartPayload = unknown> {
     return this.updateSagaState(SagaMessage.createAbortSagaMessage(this.sagaId))
   }
 
-  async startTask<D = unknown>(taskId: string, data?: D) {
+  async startTask<D = unknown>(taskId: string, data?: D, metadata?: Record<string, any>) {
     return this.updateSagaState(
-      SagaMessage.createStartTaskMessage(this.sagaId, taskId, data)
+      SagaMessage.createStartTaskMessage(this.sagaId, taskId, data, metadata)
     )
   }
 

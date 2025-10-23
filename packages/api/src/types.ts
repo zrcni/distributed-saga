@@ -17,6 +17,7 @@ export interface TaskInfo {
   completedAt?: Date;
   data?: any;
   error?: any;
+  isOptional?: boolean;
   childSagas?: SagaInfo[];  // Child sagas created by this task
 }
 

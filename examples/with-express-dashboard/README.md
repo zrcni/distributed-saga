@@ -72,14 +72,25 @@ The example creates multiple sagas to demonstrate different states and scenarios
 - Saga aborted ❌
 - Payment refunded (compensated) ↩️
 
+#### Saga 4: Completed with Optional Tasks 🆕⭕
+- Payment processed ✅
+- Inventory reserved ✅
+- **SMS notification (optional)** - Failed but saga continued ⭕
+- **Loyalty points update (optional)** - Completed successfully ⭕
+- Confirmation email sent ✅
+- Saga completed successfully ✅
+
+**Optional Tasks Feature**: Tasks marked with ⭕ are optional - they can fail without aborting the entire saga. This is useful for nice-to-have features like notifications, analytics, or supplementary services that shouldn't block critical business workflows.
+
 ### Nested Sagas (Web Crawler)
 
 Demonstrates parent-child saga hierarchies with 3 levels of nesting:
 - **Parent saga**: `crawl-example-com` - Coordinates webpage crawling
 - **5 child sagas**: Page crawlers showing different states (completed, active, aborted)
-- **5 nested child sagas**: Content processors (generateSummary → generateEmbeddings)
+- **5 nested child sagas**: Content processors (generateSummary → generateEmbeddings → generateImageAltText ⭕)
+  - **Optional tasks**: Image alt text generation (AI feature), search index updates
 
-Total: 11 sagas demonstrating deep parent-child relationships
+Total: 11 sagas demonstrating deep parent-child relationships + optional tasks
 
 ### Hanging Sagas (Long-Running) ⚠️
 

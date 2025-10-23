@@ -77,17 +77,41 @@ export async function basicPluginExample() {
     .withName("chargePayment")
     .next()
     .invoke(async (data, context) => {
-      console.log(`\n[TASK] Step 3 executing in saga ${context.sagaId}`)
-      return { step: 3, result: "shipped" }
+      console.log(`\n[TASK] Step 3 (optional) - Sending confirmation email`)
+      // Simulate email service that might be unavailable
+      if (Math.random() > 0.7) {
+        throw new Error("Email service temporarily unavailable")
+      }
+      return { step: 3, result: "email sent" }
+    })
+    .withName("sendConfirmationEmail")
+    .optional() // Email failures shouldn't block order processing
+    .next()
+    .invoke(async (data, context) => {
+      console.log(`\n[TASK] Step 4 executing in saga ${context.sagaId}`)
+      return { step: 4, result: "shipped" }
     })
     .compensate(async () => {
       console.log("[COMPENSATION] Canceling shipment")
     })
     .withName("shipOrder")
+    .next()
+    .invoke(async (data, context) => {
+      console.log(`\n[TASK] Step 5 (optional) - Tracking analytics`)
+      return { step: 5, result: "tracked", event: "order_completed" }
+    })
+    .withName("trackAnalytics")
+    .optional() // Analytics failures shouldn't affect order
     .end()
 
   // Create saga
   const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+  
+  // Add handler for optional task failures
+  orchestrator.on("optionalTaskFailed", ({ taskName, error }) => {
+    console.log(`\n[WARNING] Optional task "${taskName}" failed but saga continues`)
+    console.log(`Error: ${error instanceof Error ? error.message : String(error)}`)
+  })
   
   try {
     const saga = await coordinator.createSaga("order-saga-001", {

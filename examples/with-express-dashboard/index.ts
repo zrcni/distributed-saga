@@ -11,7 +11,8 @@ const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
 
 // Create some example sagas for demonstration
 async function createExampleSagas() {
-  // Example saga definition
+  // Example saga definition - note: optional tasks feature is available
+  // but we're creating sagas manually for dashboard demonstration
   const exampleSagaDefinition = SagaBuilder.start()
     .invoke(async () => {
       console.log("Step 1: Processing payment")
@@ -82,6 +83,30 @@ async function createExampleSagas() {
   })
   await saga3.endCompensatingTask("processPayment", { refunded: true })
 
+  // Create saga 4 - Demonstrating optional tasks feature
+  const saga4 = await coordinator.createSaga("order-004", {
+    orderId: "order-004",
+    amount: 175,
+    customerId: "cust-321",
+  })
+
+  await saga4.startTask("processPayment")
+  await saga4.endTask("processPayment", { paymentId: "pay_321" })
+  await saga4.startTask("reserveInventory")
+  await saga4.endTask("reserveInventory", { reservationId: "res_321" })
+  
+  // Optional task: Send SMS notification (marked as optional via metadata)
+  await saga4.startTask("sendSMSNotification", {}, { isOptional: true })
+  await saga4.endTask("sendSMSNotification", null) // null indicates optional task failed gracefully
+  
+  // Another optional task: Update loyalty points
+  await saga4.startTask("updateLoyaltyPoints", {}, { isOptional: true })
+  await saga4.endTask("updateLoyaltyPoints", { pointsAdded: 10 })
+  
+  await saga4.startTask("sendEmail")
+  await saga4.endTask("sendEmail", { emailSent: true })
+  await saga4.endSaga()
+
   console.log("Created example sagas")
 }
 
@@ -148,8 +173,12 @@ async function createNestedSagasExample() {
       // Create nested child saga for content processing
       const processSagaId = `${childSagaId}-process-content`
       const processSaga = await coordinator.createSaga(processSagaId, {
+        pageNumber: i,
         pageId: childSagaId,
         contentType: "webpage",
+      }, {
+        parentSagaId: childSagaId,
+        parentTaskId: "processContent",
       })
 
       // Generate summary
@@ -165,6 +194,10 @@ async function createNestedSagasExample() {
         embeddings: [0.1, 0.2, 0.3],
         model: "text-embedding-v1",
       })
+      
+      // Optional: Generate image alt text (AI feature, may fail)
+      await processSaga.startTask("generateImageAltText", {}, { isOptional: true })
+      await processSaga.endTask("generateImageAltText", { altTextsGenerated: 3 })
 
       await processSaga.endSaga()
 
@@ -175,6 +208,11 @@ async function createNestedSagasExample() {
         saved: true,
         savedAt: new Date(),
       })
+      
+      // Optional: Update search index (nice-to-have, can be done async)
+      await child.startTask("updateSearchIndex", {}, { isOptional: true })
+      await child.endTask("updateSearchIndex", null) // Simulating failure
+      
       await child.endSaga()
       childResults.push({ pageNumber: i, status: "completed" })
     } else if (i === 3) {
@@ -279,6 +317,7 @@ async function createNestedSagasExample() {
   console.log("  - 1 parent saga (crawl-example-com)")
   console.log("  - 5 child sagas (page crawlers)")
   console.log("  - 5 nested child sagas (content processors)")
+  console.log("  - Optional tasks: image alt text + search indexing")
   console.log("  Total: 11 sagas with 3 levels of nesting")
 }
 
@@ -473,6 +512,13 @@ app.get("/", (req, res) => {
             <li><strong>order-001</strong> - In Progress (recovery scenario)</li>
             <li><strong>order-002</strong> - Completed Successfully</li>
             <li><strong>order-003</strong> - Aborted with Compensation</li>
+            <li><strong>order-004</strong> - Completed with Optional Tasks 🆕⭕
+              <ul>
+                <li>Demonstrates optional tasks feature</li>
+                <li>SMS notification (optional, failed gracefully)</li>
+                <li>Loyalty points (optional, completed successfully)</li>
+              </ul>
+            </li>
           </ul>
         </div>
         
@@ -482,7 +528,7 @@ app.get("/", (req, res) => {
             <li><strong>crawl-example-com</strong> - Parent saga coordinating webpage crawling</li>
             <li>5 child sagas (page crawlers) showing different states:
               <ul>
-                <li>Pages 1, 2, 5 - Completed ✓</li>
+                <li>Pages 1, 2, 5 - Completed ✓ (with optional tasks)</li>
                 <li>Page 3 - Active (processing content) →</li>
                 <li>Page 4 - Aborted with compensation ✗</li>
               </ul>
@@ -490,8 +536,15 @@ app.get("/", (req, res) => {
             <li>5 nested child sagas (content processors):
               <ul>
                 <li>Each page has a <code>process-webpage-content</code> saga</li>
-                <li>Tasks: generateSummary → generateEmbeddings</li>
+                <li>Tasks: generateSummary → generateEmbeddings → generateImageAltText ⭕</li>
+                <li>Optional: Image alt text generation (AI feature)</li>
                 <li>Demonstrates 3 levels of nesting!</li>
+              </ul>
+            </li>
+            <li>Optional tasks ⭕ in completed pages:
+              <ul>
+                <li>Generate image alt text (optional, nice-to-have AI feature)</li>
+                <li>Update search index (optional, can be done asynchronously)</li>
               </ul>
             </li>
           </ul>

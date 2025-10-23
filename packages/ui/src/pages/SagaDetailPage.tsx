@@ -205,6 +205,7 @@ export const SagaDetailPage: React.FC = () => {
                   </span>
                   <span className="task-name">
                     {task.taskName}
+                    {task.isOptional && <span className="optional-indicator" title="This task is optional">⭕</span>}
                     {task.error && <span className="error-indicator" title="This task has an error">⚠️</span>}
                   </span>
                   <span className={`task-status status-${task.status}`}>

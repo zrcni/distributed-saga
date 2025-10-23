@@ -103,6 +103,23 @@ export function createOrderProcessingSaga() {
     .withName("arrangeShipping")
     .next()
     .invoke(async (data: OrderPayload, context) => {
+      // Optional: Send push notification to mobile app
+      console.log("Sending push notification to customer mobile app")
+      
+      // This might fail if customer doesn't have the app installed
+      // or if push service is down, but order should still complete
+      const sharedContext = await context.ctx.get<OrderContext>()
+      
+      return {
+        notificationSent: true,
+        orderId: data.orderId,
+        amount: sharedContext.totalAmount
+      }
+    })
+    .withName("sendPushNotification")
+    .optional() // Push notifications are nice-to-have, not critical
+    .next()
+    .invoke(async (data: OrderPayload, context) => {
       // Read all accumulated context for final confirmation
       const sharedContext = await context.ctx.get<OrderContext>()
       
@@ -148,6 +165,12 @@ async function runExample() {
 
   try {
     const saga = await coordinator.createSaga(sagaId, orderData) as Saga<OrderPayload>
+
+    // Listen for optional task failures
+    orchestrator.on("optionalTaskFailed", ({ taskName, error }) => {
+      console.log(`\n[INFO] Optional task "${taskName}" failed, but order processing continues`)
+      console.log(`       Error: ${error instanceof Error ? error.message : String(error)}`)
+    })
 
     // Execute the saga
     await orchestrator.run(saga, orderSagaDefinition)

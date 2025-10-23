@@ -84,6 +84,7 @@ export class SagaAdapter implements ISagaAdapter {
               status: 'started',
               data: msg.data,
               startedAt: msg.timestamp,
+              isOptional: msg.metadata?.isOptional,
             });
             break;
 

@@ -257,7 +257,9 @@ export class SagaOrchestrator extends EventEmitter {
       // Only start the task if it hasn't been started yet
       // This handles recovery scenarios where a task was started but not completed
       if (!(await saga.isTaskStarted(step.taskName))) {
-        await saga.startTask(step.taskName, prevStepResult)
+        await saga.startTask(step.taskName, prevStepResult, {
+          isOptional: step.isOptional
+        })
 
         this.emit("taskStarted", {
           sagaId: saga.sagaId,
