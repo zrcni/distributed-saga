@@ -1,6 +1,6 @@
 {
   "name": "@zrcni/distributed-saga-board-api",
-  "version": "0.0.7-alpha.1",
+  "version": "0.0.7-alpha.2",
   "description": "Saga Board API - Core API for monitoring distributed sagas",
   "author": "zrcni",
   "license": "MIT",
@@ -44,7 +44,7 @@
     "dashboard"
   ],
   "peerDependencies": {
-    "@zrcni/distributed-saga": "^0.0.7-alpha.1"
+    "@zrcni/distributed-saga": "^0.0.7-alpha.2"
   },
   "devDependencies": {
     "@swc/cli": "^0.1.65",
