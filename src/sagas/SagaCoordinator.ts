@@ -2,6 +2,7 @@ import { SagaLog } from "./types"
 import { Saga } from "./Saga"
 import { SagaRecovery, SagaRecoveryType } from "./SagaRecovery"
 import { SagaState } from "./SagaState"
+import { SagaError } from "@/errors"
 
 export class SagaCoordinator {
   log: SagaLog
@@ -50,7 +51,7 @@ export class SagaCoordinator {
    */
   private async abortSagaWithChildrenInTransaction(sagaId: string): Promise<void> {
     if (!this.log.beginTransaction || !this.log.commitTransaction || !this.log.abortTransaction) {
-      throw new Error("Transaction methods not available on this SagaLog implementation")
+      throw new SagaError("Transaction methods not available on this SagaLog implementation")
     }
 
     const session = await this.log.beginTransaction()
@@ -110,7 +111,7 @@ export class SagaCoordinator {
    */
   private async deleteSagaWithChildrenInTransaction(sagaId: string): Promise<void> {
     if (!this.log.beginTransaction || !this.log.commitTransaction || !this.log.abortTransaction) {
-      throw new Error("Transaction methods not available on this SagaLog implementation")
+      throw new SagaError("Transaction methods not available on this SagaLog implementation")
     }
 
     const session = await this.log.beginTransaction()
@@ -154,7 +155,7 @@ export class SagaCoordinator {
     const state = await SagaRecovery.recoverState(sagaId, this)
     
     if (!state) {
-      throw new Error(`Failed to recover saga state for ${sagaId}`)
+      throw new SagaError(`Failed to recover saga state for ${sagaId}`)
     }
     
     const saga = await Saga.rehydrateSaga<D>(sagaId, state as SagaState<D>, this.log)
