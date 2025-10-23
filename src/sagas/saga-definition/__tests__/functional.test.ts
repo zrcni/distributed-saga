@@ -94,6 +94,30 @@ describe("Functional Saga API", () => {
       expect(config.middleware).toHaveLength(1)
       expect(config.middleware![0]).toBe(middleware)
     })
+
+    it("should allow marking a step as optional", () => {
+      const stepBuilder = step("testStep")
+        .invoke(async () => ({ result: "test" }))
+        .optional()
+
+      const config = stepBuilder.getConfig()
+      expect(config.optional).toBe(true)
+    })
+
+    it("should allow chaining optional with other methods", () => {
+      const invokeCallback = jest.fn(async () => ({ result: "test" }))
+      const compensateCallback = jest.fn(async () => {})
+
+      const stepBuilder = step("testStep")
+        .invoke(invokeCallback)
+        .compensate(compensateCallback)
+        .optional()
+
+      const config = stepBuilder.getConfig()
+      expect(config.invoke).toBe(invokeCallback)
+      expect(config.compensate).toBe(compensateCallback)
+      expect(config.optional).toBe(true)
+    })
   })
 
   describe("fromSteps", () => {
@@ -736,6 +760,92 @@ describe("Functional Saga API", () => {
       expect(middleware1).toHaveBeenCalledTimes(1)
       expect(middleware2).toHaveBeenCalledTimes(1)
       expect(stepInvoke).toHaveBeenCalledTimes(1)
+    })
+
+    it("should support optional tasks with step() builder", async () => {
+      let optionalTaskCalled = false
+      let nextTaskCalled = false
+
+      const sagaDefinition = fromSteps([
+        step("optionalTask")
+          .invoke(async () => {
+            optionalTaskCalled = true
+            throw new Error("Optional task failed")
+          })
+          .optional(),
+        step("nextTask")
+          .invoke(async () => {
+            nextTaskCalled = true
+            return "success"
+          })
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const saga = await coordinator.createSaga("test-saga", {})
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(optionalTaskCalled).toBe(true)
+      expect(nextTaskCalled).toBe(true)
+      expect(await saga.isSagaCompleted()).toBe(true)
+    })
+
+    it("should support optional tasks with config object format", async () => {
+      let optionalTaskCalled = false
+      let nextTaskCalled = false
+
+      const sagaDefinition = fromSteps([
+        {
+          name: "optionalTask",
+          invoke: async () => {
+            optionalTaskCalled = true
+            throw new Error("Optional task failed")
+          },
+          optional: true
+        },
+        {
+          name: "nextTask",
+          invoke: async () => {
+            nextTaskCalled = true
+            return "success"
+          }
+        }
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const saga = await coordinator.createSaga("test-saga", {})
+      const orchestrator = new SagaOrchestrator()
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(optionalTaskCalled).toBe(true)
+      expect(nextTaskCalled).toBe(true)
+      expect(await saga.isSagaCompleted()).toBe(true)
+    })
+
+    it("should emit optionalTaskFailed event for optional tasks in functional API", async () => {
+      const events: string[] = []
+
+      const sagaDefinition = fromSteps([
+        step("optionalTask")
+          .invoke(async () => {
+            throw new Error("Optional task failed")
+          })
+          .optional()
+      ])
+
+      const coordinator = InMemorySagaLog.createInMemorySagaCoordinator()
+      const saga = await coordinator.createSaga("test-saga", {})
+      const orchestrator = new SagaOrchestrator()
+
+      orchestrator.on("optionalTaskFailed", ({ taskName, error }) => {
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        events.push(`${taskName}:${errorMsg}`)
+      })
+
+      await orchestrator.run(saga, sagaDefinition)
+
+      expect(events).toContain("optionalTask:Optional task failed")
+      expect(await saga.isSagaCompleted()).toBe(true)
     })
   })
 })

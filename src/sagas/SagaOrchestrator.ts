@@ -21,6 +21,12 @@ export interface SagaOrchestratorEvents {
     taskName: string
     error: unknown
   }
+  optionalTaskFailed: {
+    sagaId: string
+    data: unknown
+    taskName: string
+    error: unknown
+  }
   middlewareSucceeded: {
     sagaId: string
     data: unknown
@@ -260,22 +266,57 @@ export class SagaOrchestrator extends EventEmitter {
         })
       }
 
-      const taskContext = this.createTaskContext(
-        saga,
-        prevStepResult,
-        middlewareData
-      )
-      const result = await step.invokeCallback(data, taskContext)
-      await saga.endTask(step.taskName, result)
+      try {
+        const taskContext = this.createTaskContext(
+          saga,
+          prevStepResult,
+          middlewareData
+        )
+        const result = await step.invokeCallback(data, taskContext)
+        await saga.endTask(step.taskName, result)
 
-      this.emit("taskSucceeded", {
-        sagaId: saga.sagaId,
-        data,
-        taskName: step.taskName,
-      })
+        this.emit("taskSucceeded", {
+          sagaId: saga.sagaId,
+          data,
+          taskName: step.taskName,
+        })
 
-      prevStep = step
-      prevStepResult = result
+        prevStep = step
+        prevStepResult = result
+      } catch (err) {
+        if (step.isOptional) {
+          // For optional tasks, log the error and continue
+          this.emit("optionalTaskFailed", {
+            sagaId: saga.sagaId,
+            data,
+            taskName: step.taskName,
+            error: err,
+          })
+          
+          // Mark the task as completed with null to indicate optional failure
+          // Store error marker for debugging/monitoring purposes
+          await saga.endTask(step.taskName, null)
+          
+          // Store error information in saga context for debugging if needed
+          const ctx = this.createWritableContext(saga)
+          await ctx.update((current) => ({
+            ...current,
+            [`__optionalTaskErrors__`]: {
+              ...(current[`__optionalTaskErrors__`] as Record<string, any> || {}),
+              [step.taskName]: {
+                __optionalTaskFailed: true,
+                error: err instanceof Error ? err.message : String(err)
+              }
+            }
+          }))
+          
+          prevStep = step
+          prevStepResult = null // Optional task failures don't provide results
+        } else {
+          // For required tasks, throw the error to trigger saga failure
+          throw err
+        }
+      }
     }
 
     return saga

@@ -20,6 +20,7 @@ export interface StepConfig<
   invoke?: StepInvokeCallback<Data, PrevResult, ResultData>
   compensate?: StepCompensateCallback<Data, TaskData, ResultData>
   middleware?: StepMiddlewareCallback<Data, PrevResult>[]
+  optional?: boolean
 }
 
 /**
@@ -70,6 +71,16 @@ export class FunctionalStepBuilder<
   }
 
   /**
+   * Mark this step as optional. If an optional step fails, the saga will continue
+   * to the next step instead of aborting. The error will be logged and an event
+   * will be emitted, but the saga flow will proceed.
+   */
+  optional(): FunctionalStepBuilder<Data, PrevResult, ResultData> {
+    this.config.optional = true
+    return this
+  }
+
+  /**
    * Get the configuration for this step
    * @internal
    */
@@ -100,7 +111,7 @@ export function step<Data = unknown>(
 }
 
 /**
- * Convert a functional step configuration to a SagaStep
+ * Helper function to create a SagaStep from a StepConfig
  * @internal
  */
 function createSagaStep(builder: SagaBuilder, config: StepConfig): SagaStep {
@@ -118,10 +129,16 @@ function createSagaStep(builder: SagaBuilder, config: StepConfig): SagaStep {
     }
   }
 
+  if (config.optional) {
+    sagaStep.optional()
+  }
+
   return sagaStep
 }
 
 /**
+ * @deprecated Use SagaDefinition.fromSteps
+ *
  * Create a saga definition from an array of step configurations
  *
  * This is useful when you need to dynamically build sagas or when working

@@ -28,7 +28,7 @@ export class SagaBuilder {
     return SagaDefinition.create(this)
   }
 
-  static start() {
+  static start(): SagaStep {
     return new SagaBuilder().currentStep
   }
 }

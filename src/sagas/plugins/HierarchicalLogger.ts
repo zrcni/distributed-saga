@@ -158,6 +158,7 @@ export class HierarchicalLogger implements SagaPlugin {
       taskStarted: '▶️',
       taskSucceeded: '✓',
       taskFailed: '✗',
+      optionalTaskFailed: '⚠️',
       middlewareSucceeded: '🔧',
       middlewareFailed: '⚠️',
       compensationStarted: '↩️',

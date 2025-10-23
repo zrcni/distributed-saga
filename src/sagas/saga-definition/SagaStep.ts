@@ -16,6 +16,7 @@ export class SagaStep {
   public taskName: string
   public isStart = false
   public isEnd = false
+  public isOptional = false
 
   constructor(builder: SagaBuilder) {
     this.builder = builder
@@ -55,6 +56,16 @@ export class SagaStep {
     callback: StepMiddlewareCallback<Data, PrevResult>
   ) {
     this.middleware.push(callback)
+    return this
+  }
+
+  /**
+   * Mark this task as optional. If an optional task fails, the saga will continue
+   * to the next task instead of aborting. The error will be logged and an event
+   * will be emitted, but the saga flow will proceed.
+   */
+  optional() {
+    this.isOptional = true
     return this
   }
 }
